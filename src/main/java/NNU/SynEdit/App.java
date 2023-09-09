@@ -170,7 +170,7 @@ public class App extends JFrame {
 		if ("\000".equals(FilePath)) {
 			int result = JOptionPane.showConfirmDialog((Component) null,
 					"Do you want to save?","alert", JOptionPane.YES_NO_CANCEL_OPTION);
-	    	if (result==2||result==1)
+	    	if (result!=0)
 	    		return false;
 	    	openfile(false);
 		}
@@ -203,8 +203,9 @@ public class App extends JFrame {
 							    "file is '\000'.? ",
 							    "Error reading file",
 							    JOptionPane.ERROR_MESSAGE);
-					} else
-						FilePath = res;
+						continue;
+					}
+					FilePath = res;
 				} catch (IOException e) {
 					JOptionPane.showMessageDialog(this,
 						    "Unable to read file due to error: " + e.getMessage(),
@@ -218,6 +219,7 @@ public class App extends JFrame {
 		}
 		if (load) {
 			textArea.setText(read(res));
+	        textArea.setCaretPosition(0);
 			revalidate();
 			repaint();
 		}
@@ -245,7 +247,8 @@ public class App extends JFrame {
 		if (saved) System.exit(0);
 		int result = JOptionPane.showConfirmDialog((Component) null,
 				"Do you want to exit?","alert", JOptionPane.YES_NO_OPTION);
-    	if (result==1)
+		System.out.println(result);
+    	if (result==1||result==-1)
     		return;
     	megaSave();
     	System.exit(0);

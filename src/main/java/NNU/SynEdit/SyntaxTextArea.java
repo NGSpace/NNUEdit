@@ -23,7 +23,7 @@ public class SyntaxTextArea extends RSyntaxTextArea {
 
 	public SyntaxTextArea(App app) {
 		super();
-        setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_ASSEMBLER_X86);
+        setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVA);
         setCodeFoldingEnabled(true);
         setAntiAliasingEnabled(true);
         setMarginLineEnabled(false);
