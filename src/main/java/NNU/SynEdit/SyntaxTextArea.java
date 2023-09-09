@@ -23,7 +23,11 @@ public class SyntaxTextArea extends RSyntaxTextArea {
 
 	public SyntaxTextArea(App app) {
 		super();
-        setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVA);
+        try {
+			setSyntaxEditingStyle("text/" + app.stng.get("syntax").toLowerCase().trim());
+			System.out.println("text/" + app.stng.get("syntax").toLowerCase().trim());
+		} catch (ValueNotFoundException e) {e.printStackTrace();}
+        //setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVA);
         setCodeFoldingEnabled(true);
         setAntiAliasingEnabled(true);
         setMarginLineEnabled(false);

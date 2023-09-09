@@ -17,8 +17,10 @@ import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URL;
+import java.net.URLDecoder;
 import java.util.Scanner;
 
 import javax.swing.JComponent;
@@ -45,22 +47,28 @@ public class App extends JFrame {
 	 */
 	private static final long serialVersionUID = 5770603365260133811L;
     public static final Dimension size = Toolkit.getDefaultToolkit().getScreenSize();
-    public static final int MenuBarSize = 20;
+    public static final int MenuBarSize = 30;
     public static final Color MenuBG = new Color(33, 33, 33);
     public static final Color MenuFG = new Color(240, 240, 240);
     public static String FilePath = "\000";
 	private SyntaxTextArea textArea;
 	public boolean saved = true;
+	public final Settings stng = new Settings(getProgramPath() + "\\SynEdit\\SynEdit.properties");
 	
 	@Override
 	public Font getFont() {
-		return new Font(Font.MONOSPACED, Font.BOLD, 40);
+		try {
+			return new Font(Font.MONOSPACED, Font.BOLD, Integer.valueOf(stng.get("fontsize")));
+		} catch (Exception e) {
+			e.printStackTrace();
+			return new Font(Font.MONOSPACED, Font.BOLD, 40);
+		}
 	}
 
     public App(String str) throws Exception {
 
         setSize((int)size.getWidth()/2,(int)size.getHeight()/2);
-
+        
     	try {
     	    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
     	} catch (Exception e) {
@@ -137,7 +145,7 @@ public class App extends JFrame {
         setBackground(Color.black);
         setContentPane(contentpane);
         setTitle("SynEdit");
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         setLocation(getWidth()/2,getHeight()/2);
         this.setExtendedState(Frame.MAXIMIZED_BOTH);
         
@@ -172,7 +180,7 @@ public class App extends JFrame {
 					"Do you want to save?","alert", JOptionPane.YES_NO_CANCEL_OPTION);
 	    	if (result!=0)
 	    		return false;
-	    	openfile(false);
+	    	openfile(false, true);
 		}
 		return save(FilePath, textArea.getText());
 	}
@@ -190,14 +198,21 @@ public class App extends JFrame {
 	}
 	
 	public void openfile(boolean load) {
+		openfile(load, false);
+	}
+	
+	public void openfile(boolean load, boolean save) {
 		String res = "\000";
 		while ("\000".equals(res)) {
 	        JFileChooser chooser = new JFileChooser();
-	        int returnVal = chooser.showOpenDialog(null);
+	        chooser.setDialogTitle("Specify a file to " + (save ? "Save" : "Open"));  
+	        int returnVal = save ? chooser.showSaveDialog(this) : chooser.showOpenDialog(this);
 	        if(returnVal == JFileChooser.APPROVE_OPTION) {
 	            try {
 					res = chooser.getSelectedFile().getCanonicalPath();
-					Scanner myReader = new Scanner(new File(res));
+					File f = new File(res);
+					if (!f.exists() && !f.createNewFile())
+							throw new Exception("Can't create file");
 					if ("\000".equals(res)) {
 						JOptionPane.showMessageDialog(this,
 							    "file is '\000'.? ",
@@ -206,7 +221,7 @@ public class App extends JFrame {
 						continue;
 					}
 					FilePath = res;
-				} catch (IOException e) {
+				} catch (Exception e) {
 					JOptionPane.showMessageDialog(this,
 						    "Unable to read file due to error: " + e.getMessage(),
 						    "Error reading file",
@@ -254,4 +269,10 @@ public class App extends JFrame {
     	System.exit(0);
 	}
 
+	public static String getProgramPath() throws UnsupportedEncodingException {
+		URL url = App.class.getProtectionDomain().getCodeSource().getLocation();
+		String jarPath = URLDecoder.decode(url.getFile(), "UTF-8");
+		return new File(jarPath).getParentFile().getPath();
+	}
+	
 }
