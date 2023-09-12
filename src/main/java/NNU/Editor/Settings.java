@@ -1,4 +1,6 @@
-package NNU.SynEdit;
+package NNU.Editor;
+
+import static NNU.Editor.Utils.EditorName;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -17,20 +19,31 @@ public class Settings {
 	
 	public File file;
 	public Map<String,Object> map = new HashMap<String,Object>();
+	/**
+	 * The default values read from "/NNU/Editor/NNUEdit.properties" in the jar file
+	 */
 	public static final Map<String,Object> defaults = 
-			new Settings(App.class.getResourceAsStream("/NNU/SynEdit/SynEdit.properties")).map;
-
-	public Settings(String FilePath) throws Exception {
-		file = new File(FilePath);
-		if (!file.exists()) {
-			if (makefile(FilePath)) {
-				map = new HashMap<String,Object>(defaults);
-				save();
-			}
-		}
+			new Settings(App.class.getResourceAsStream("/NNU/Editor/" + EditorName + ".properties")).map;
+	public final App app;
+	
+	/**
+	 * The settings manager
+	 * @param FilePath path to read from
+	 * @param app the app linked to this
+	 * @throws Exception
+	 */
+	public Settings(String FilePath, App app) {
+		this.app = app;
 		try {
+			file = new File(FilePath);
+			if (!file.exists()) {
+				if (makefile(FilePath)) {
+					map = new HashMap<String,Object>(defaults);
+					save();
+				}
+			}
 			read(new FileInputStream(file));
-		} catch (FileNotFoundException e) {
+		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
@@ -41,7 +54,12 @@ public class Settings {
 		}
 		fw.close();
 	}
-	public Settings(InputStream ins) {
+	public Settings(InputStream ins, App app) {
+		this.app = app;
+		read(ins);
+	}
+	protected Settings(InputStream ins) {
+		this.app = null;
 		read(ins);
 	}
 	protected boolean makefile(String FilePath) throws IOException {
@@ -56,7 +74,12 @@ public class Settings {
 			return false;
 		}
 	}
-
+	
+	public void refresh() throws Exception {
+		read(new FileInputStream(file));
+		app.refreshSettings();
+	}
+	
 	protected void read(InputStream ins)  {
 		Scanner myReader = new Scanner(ins);
 		StringBuilder strb = new StringBuilder();
@@ -81,7 +104,7 @@ public class Settings {
 			}
 		}
 	}
-	protected String get(String key) throws ValueNotFoundException {
+	public String get(String key) throws ValueNotFoundException {
 		String res = null;
 		res = (String) map.get(key);
 		if (res==null) {
@@ -97,5 +120,13 @@ public class Settings {
 		return res;
 		
 	}
+	public void set(String key,Object value) {
+		map.put(key, value);
+		try {
+			save();
+		} catch (IOException e) {e.printStackTrace();}
+		
+	}
+	
 	
 }

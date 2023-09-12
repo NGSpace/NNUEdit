@@ -1,4 +1,6 @@
-package NNU.SynEdit;
+package NNU.Editor;
+
+import static NNU.Editor.Utils.EditorName;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -15,8 +17,10 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
@@ -24,7 +28,6 @@ import java.net.URLDecoder;
 import java.util.Scanner;
 
 import javax.swing.JComponent;
-import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -38,36 +41,51 @@ import org.fife.ui.rsyntaxtextarea.Theme;
 import org.fife.ui.rtextarea.ConfigurableCaret;
 
 /**
- * Hello world!
- *
+ * the editor
  */
 public class App extends JFrame {
-    /**
-	 * 
-	 */
 	private static final long serialVersionUID = 5770603365260133811L;
-    public static final Dimension size = Toolkit.getDefaultToolkit().getScreenSize();
+    public static final Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
     public static final int MenuBarSize = 30;
     public static final Color MenuBG = new Color(33, 33, 33);
     public static final Color MenuFG = new Color(240, 240, 240);
-    public static String FilePath = "\000";
-	private SyntaxTextArea textArea;
+	public SyntaxTextArea textArea;
 	public boolean saved = true;
-	public final Settings stng = new Settings(getProgramPath() + "\\SynEdit\\SynEdit.properties");
+	public boolean isbusy = false;
+	/**
+	 * The settings
+	 */
+	public final Settings stng;
 	
 	@Override
 	public Font getFont() {
 		try {
-			return new Font(Font.MONOSPACED, Font.BOLD, Integer.valueOf(stng.get("fontsize")));
+			return new Font(stng.get("fontfamily"),
+				Integer.valueOf(stng.get("fontstyle")),
+				Integer.valueOf(stng.get("fontsize")));
 		} catch (Exception e) {
 			e.printStackTrace();
 			return new Font(Font.MONOSPACED, Font.BOLD, 40);
 		}
 	}
+	
+	/**
+	 * the app
+	 * @param filepath the path to read from upon startup (leave empty for none)
+	 * @throws IOException
+	 */
+    public App(String filepath) throws IOException {
+    	
+    	File stfile = new File(getProgramPath() + "/" + EditorName + "/" + EditorName + ".properties");
+    	stng = new Settings(stfile.getAbsolutePath(), this);
+    	
+    	String starttext = "";
+    	
+    	if (!"".equals(filepath)) {
+    		starttext = read(filepath);
+    	}
 
-    public App(String str) throws Exception {
-
-        setSize((int)size.getWidth()/2,(int)size.getHeight()/2);
+        setSize((int)screenSize.getWidth()/2,(int)screenSize.getHeight()/2);
         
     	try {
     	    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -82,9 +100,8 @@ public class App extends JFrame {
         JScrollPane sp = new JScrollPane(textArea,
         		ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
         		ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        InputStream inpstr = App.class.getResourceAsStream("/NNU/SynEdit/Style.xml");
+        InputStream inpstr = App.class.getResourceAsStream("/NNU/Editor/Style.xml");
         Theme theme = Theme.load(inpstr);
-        theme.lineNumberColor = Color.white;
         theme.apply(textArea);
         textArea.setMargin(new Insets(0, 0, 0, 0));
         textArea.setFont(getFont());
@@ -119,6 +136,7 @@ public class App extends JFrame {
             public void componentResized(ComponentEvent e) {
                 menuBar.setBounds(0, 0, getWidth(), MenuBarSize);
                 sp.setBounds(0-1, MenuBarSize-3, getWidth() - 13, getHeight() -MenuBarSize - 35);
+                repaint();
             }
         });
         addWindowListener(new WindowAdapter() {
@@ -133,40 +151,44 @@ public class App extends JFrame {
         	,KeyStroke.getKeyStroke(KeyEvent.VK_S,InputEvent.CTRL_DOWN_MASK),
         	JComponent.WHEN_IN_FOCUSED_WINDOW );
         getRootPane().registerKeyboardAction(e ->
-	    	openfile(true)
+        	textArea.openfile(true)
 	    	,KeyStroke.getKeyStroke(KeyEvent.VK_O,InputEvent.CTRL_DOWN_MASK),
 	    	JComponent.WHEN_IN_FOCUSED_WINDOW );
         getRootPane().registerKeyboardAction(e ->
-	    	openfile(true)
+        	textArea.openfile(true)
 	    	,KeyStroke.getKeyStroke(KeyEvent.VK_C,InputEvent.CTRL_DOWN_MASK),
+	    	JComponent.WHEN_IN_FOCUSED_WINDOW );
+        getRootPane().registerKeyboardAction(e ->
+	    	new PreferencesMenu(stng,this)
+	    	,KeyStroke.getKeyStroke(KeyEvent.VK_P,InputEvent.CTRL_DOWN_MASK),
 	    	JComponent.WHEN_IN_FOCUSED_WINDOW );
         
         setUndecorated(false);
         setBackground(Color.black);
         setContentPane(contentpane);
-        setTitle("SynEdit");
+        setTitle(EditorName);
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         setLocation(getWidth()/2,getHeight()/2);
         this.setExtendedState(Frame.MAXIMIZED_BOTH);
         
-        textArea.setText(str);
+        textArea.setText(starttext);
         textArea.setCaretPosition(0);
         
         revalidate();
         repaint();
     }
-
+    
+    /**
+     * the entry point of this weird ass program
+     * @param args which file to open at startup (leave empty for no selected file)
+     */
 	public static void main(String[] args) {
 		
 		final StringBuilder starttext = new StringBuilder();
 		if (args.length>0) {
-			String res = read(args[0]);
-			starttext.append("\000".equals(res) ? "" : res);
-			if (!"\000".equals(res))
-				FilePath = args[0];
+			starttext.append(args[0]);
 		}
 		
-        // Start all Swing applications on the EDT.
         SwingUtilities.invokeLater(() -> {
 			try {
 				new App(starttext.toString()).setVisible(true);
@@ -174,17 +196,27 @@ public class App extends JFrame {
 		});
     }
 	
+	/**
+	 * calls save and asks user where to save if non is selected already.
+	 * @return whether the operation was successful
+	 */
 	public boolean megaSave() {
-		if ("\000".equals(FilePath)) {
+		if ("\000".equals(textArea.FilePath)) {
 			int result = JOptionPane.showConfirmDialog((Component) null,
 					"Do you want to save?","alert", JOptionPane.YES_NO_CANCEL_OPTION);
 	    	if (result!=0)
 	    		return false;
-	    	openfile(false, true);
+	    	textArea.openfile(false, true);
 		}
-		return save(FilePath, textArea.getText());
+		return save(textArea.FilePath, textArea.getText());
 	}
 	
+	/**
+	 * saves text to the path specified
+	 * @param path the path
+	 * @param text the text
+	 * @return whether the operation was successful
+	 */
 	public boolean save(String path, String text) {
 		try {
 			saved = true;
@@ -197,49 +229,11 @@ public class App extends JFrame {
 		}
 	}
 	
-	public void openfile(boolean load) {
-		openfile(load, false);
-	}
-	
-	public void openfile(boolean load, boolean save) {
-		String res = "\000";
-		while ("\000".equals(res)) {
-	        JFileChooser chooser = new JFileChooser();
-	        chooser.setDialogTitle("Specify a file to " + (save ? "Save" : "Open"));  
-	        int returnVal = save ? chooser.showSaveDialog(this) : chooser.showOpenDialog(this);
-	        if(returnVal == JFileChooser.APPROVE_OPTION) {
-	            try {
-					res = chooser.getSelectedFile().getCanonicalPath();
-					File f = new File(res);
-					if (!f.exists() && !f.createNewFile())
-							throw new Exception("Can't create file");
-					if ("\000".equals(res)) {
-						JOptionPane.showMessageDialog(this,
-							    "file is '\000'.? ",
-							    "Error reading file",
-							    JOptionPane.ERROR_MESSAGE);
-						continue;
-					}
-					FilePath = res;
-				} catch (Exception e) {
-					JOptionPane.showMessageDialog(this,
-						    "Unable to read file due to error: " + e.getMessage(),
-						    "Error reading file",
-						    JOptionPane.ERROR_MESSAGE);
-					e.printStackTrace();
-				}
-	        } else {
-	        	return;
-	        }
-		}
-		if (load) {
-			textArea.setText(read(res));
-	        textArea.setCaretPosition(0);
-			revalidate();
-			repaint();
-		}
-	}
-	
+	/**
+	 * reads a file and returns it's contents in String form.
+	 * @param path The path to file to read from.
+	 * @return the contents of said file.
+	 */
 	public static String read(String path) {
 		try {
 			File myObj = new File(path);
@@ -257,22 +251,49 @@ public class App extends JFrame {
 		}
 		return "\000";
 	}
-
+	
+	/**
+	 * This does nothing yet.
+	 */
+	@Unfinnished
+	public void ConfirmExit() {
+		//Planned
+	}
+	
+	/**
+	 * Pull up the close menu and runs System.exit(0); if user agrees.
+	 */
 	public void close() {
-		if (saved) System.exit(0);
-		int result = JOptionPane.showConfirmDialog((Component) null,
+		if (saved&&!isbusy) System.exit(0);
+		int result = JOptionPane.showConfirmDialog(null,
 				"Do you want to exit?","alert", JOptionPane.YES_NO_OPTION);
-		System.out.println(result);
     	if (result==1||result==-1)
     		return;
     	megaSave();
     	System.exit(0);
 	}
-
+	
+	/**
+	 * returns the location of the jar
+	 * @return the location of the jar
+	 * @throws UnsupportedEncodingException
+	 */
 	public static String getProgramPath() throws UnsupportedEncodingException {
 		URL url = App.class.getProtectionDomain().getCodeSource().getLocation();
 		String jarPath = URLDecoder.decode(url.getFile(), "UTF-8");
 		return new File(jarPath).getParentFile().getPath();
+	}
+	
+	/**
+	 * Refreshes the settings from the map of stng
+	 * @apiNote This rereads changes made to the properties file
+	 * @throws ValueNotFoundException
+	 * @throws IOException
+	 */
+	public void refreshSettings() throws ValueNotFoundException, IOException {
+		textArea.refresh();
+		//this.revalidate();
+		//this.repaint();
 	}
 	
 }

@@ -1,7 +1,8 @@
-package NNU.SynEdit;
+package NNU.Editor;
 
-import static NNU.SynEdit.App.MenuBG;
-import static NNU.SynEdit.App.MenuFG;
+import static NNU.Editor.App.MenuBG;
+import static NNU.Editor.App.MenuFG;
+import static NNU.Editor.Utils.EditorName;
 
 import java.awt.Font;
 import java.awt.Graphics;
@@ -12,12 +13,13 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-import javax.swing.text.Document;
 
+/**
+ * the menubar
+ */
 public class MenuThingy extends JMenuBar {
 	
+	private static final long serialVersionUID = -6781221982811029019L;
 	protected final App app;
 	
 	public MenuThingy(App app) {
@@ -39,7 +41,7 @@ public class MenuThingy extends JMenuBar {
         SAVE.setToolTipText("Save a file");
         FILE.add(SAVE);
         JMenuItem OPEN = new MenuItem("Open");
-        OPEN.addActionListener(e -> app.openfile(true));
+        OPEN.addActionListener(e -> app.textArea.openfile(true));
         OPEN.setMnemonic(KeyEvent.VK_O);
         OPEN.setToolTipText("Open a file in SynEdit");
         FILE.add(OPEN);
@@ -52,18 +54,19 @@ public class MenuThingy extends JMenuBar {
 
 		/* Help */
         JMenu HELP = new Menu("Help");
-        HELP.setMnemonic(KeyEvent.VK_F);
+        HELP.setMnemonic(KeyEvent.VK_H);
         HELP.setFont(new Font(Font.SANS_SERIF,Font.PLAIN,15));
         HELP.setToolTipText("Help");
         JMenuItem PREFRENCES = new MenuItem("Prefrences");
-        PREFRENCES.addActionListener(e -> 
-		JOptionPane.showMessageDialog(null,
-				"Menu is WIP, please edit the settings directly in the SynEdit.properties file in the"
-				+ "SynEdit Directory",
-				"WIP", JOptionPane.WARNING_MESSAGE));
-        PREFRENCES.setMnemonic(KeyEvent.VK_S);
-        PREFRENCES.setToolTipText("Edit SynEdit's prefrences");
+        PREFRENCES.addActionListener(e -> new PreferencesMenu(app.stng,app));
+        PREFRENCES.setMnemonic(KeyEvent.VK_P);
+        PREFRENCES.setToolTipText("Edit " + EditorName + "'s prefrences");
         HELP.add(PREFRENCES);
+        JMenuItem CREDITS = new MenuItem("About");
+        CREDITS.addActionListener(e -> new AboutMenu());
+        CREDITS.setMnemonic(KeyEvent.VK_P);
+        CREDITS.setToolTipText("About " + EditorName);
+        HELP.add(CREDITS);
         add(HELP);
 	}
 	
@@ -77,6 +80,8 @@ public class MenuThingy extends JMenuBar {
 }
 
 class MenuItem extends JMenuItem {
+	private static final long serialVersionUID = 9131978348527133180L;
+
 	public MenuItem(String str) {
 		super(str);
         setOpaque(true);
@@ -85,6 +90,8 @@ class MenuItem extends JMenuItem {
 	}
 }
 class Menu extends JMenu {
+	private static final long serialVersionUID = -1789396700301437504L;
+
 	public Menu(String str) {
 		super(str);
         setOpaque(true);
