@@ -24,7 +24,7 @@ import NNU.Editor.Utils.Utils;
 import NNU.Editor.Utils.ValueNotFoundException;
 import NNU.Editor.Windows.Window;
 
-public class SyntaxTextArea extends RSyntaxTextArea{
+public class SyntaxTextArea extends RSyntaxTextArea {
 
 	/**
 	 * 

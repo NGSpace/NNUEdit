@@ -17,6 +17,7 @@ import javax.swing.JMenuItem;
 import NNU.Editor.App;
 import NNU.Editor.SyntaxTextArea;
 import NNU.Editor.Utils.Utils;
+import NNU.Editor.Windows.AboutWindow;
 import NNU.Editor.Windows.PrefrencesWindow;
 import NNU.Editor.Windows.TextEditorWindow;
 
@@ -100,7 +101,7 @@ public class MenuThingy extends JMenuBar {
         PREFRENCES.setToolTipText("Edit " + EDITORNAME + "'s prefrences");
         HELP.add(PREFRENCES);
         JMenuItem CREDITS = new MenuItem("About");
-        CREDITS.addActionListener(e -> new AboutMenu());
+        CREDITS.addActionListener(e -> app.setSelectedWindow(new AboutWindow(app)));
         CREDITS.setMnemonic(KeyEvent.VK_P);
         CREDITS.setToolTipText("About " + EDITORNAME);
         HELP.add(CREDITS);

@@ -97,7 +97,7 @@ public class App extends JFrame {
     			"/" + EDITORNAME + "/" + EDITORNAME + ".properties");
     	stng = new Settings(stfile.getAbsolutePath(), this);
     	
-    	String starttext = "TextArea1";
+    	String starttext = "";
     	
     	if (!"".equals(filepath)) {
     		starttext = Utils.read(filepath);
@@ -213,7 +213,7 @@ public class App extends JFrame {
         
         /* Test Button (CTRL + T) */
         getRootPane().registerKeyboardAction(e -> {
-	        	setSelectedWindow(new AboutWindow(this));
+	        	//setSelectedWindow(new AboutWindow(this));
 	        }
 	    	,KeyStroke.getKeyStroke(KeyEvent.VK_T,InputEvent.CTRL_DOWN_MASK),
 	    	JComponent.WHEN_IN_FOCUSED_WINDOW );
