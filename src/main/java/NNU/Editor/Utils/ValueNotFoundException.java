@@ -1,4 +1,4 @@
-package NNU.Editor;
+package NNU.Editor.Utils;
 
 public class ValueNotFoundException extends Exception {
 

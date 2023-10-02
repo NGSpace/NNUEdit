@@ -1,10 +1,9 @@
 package NNU.Editor;
 
-import static NNU.Editor.Utils.EditorName;
+import static NNU.Editor.Utils.Utils.EDITORNAME;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,6 +14,8 @@ import java.util.Scanner;
 
 import javax.swing.JOptionPane;
 
+import NNU.Editor.Utils.ValueNotFoundException;
+
 public class Settings {
 	
 	public File file;
@@ -23,7 +24,7 @@ public class Settings {
 	 * The default values read from "/NNU/Editor/NNUEdit.properties" in the jar file
 	 */
 	public static final Map<String,Object> defaults = 
-			new Settings(App.class.getResourceAsStream("/NNU/Editor/" + EditorName + ".properties")).map;
+			new Settings(App.class.getResourceAsStream("/NNU/Editor/" + EDITORNAME + ".properties")).map;
 	public final App app;
 	
 	/**
@@ -36,11 +37,10 @@ public class Settings {
 		this.app = app;
 		try {
 			file = new File(FilePath);
-			if (!file.exists()) {
-				if (makefile(FilePath)) {
+			if (!file.exists()&&(makefile(FilePath))) {
 					map = new HashMap<String,Object>(defaults);
 					save();
-				}
+				
 			}
 			read(new FileInputStream(file));
 		} catch (IOException e) {
@@ -116,7 +116,7 @@ public class Settings {
 		}
 		if (res==null)
 			throw new ValueNotFoundException("The key " + key + 
-					" does not exist in either local settings or defaults");
+					" does not exist in either user settings or defaults");
 		return res;
 		
 	}

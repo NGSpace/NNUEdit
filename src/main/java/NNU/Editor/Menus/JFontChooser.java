@@ -1,4 +1,4 @@
-package NNU.Editor;
+package NNU.Editor.Menus;
 
 import java.awt.BorderLayout;
 import java.awt.Component;

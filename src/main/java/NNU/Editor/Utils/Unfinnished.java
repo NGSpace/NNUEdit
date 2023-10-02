@@ -1,4 +1,4 @@
-package NNU.Editor;
+package NNU.Editor.Utils;
 
 import static java.lang.annotation.ElementType.CONSTRUCTOR;
 import static java.lang.annotation.ElementType.FIELD;

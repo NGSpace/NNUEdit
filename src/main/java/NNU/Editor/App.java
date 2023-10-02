@@ -1,14 +1,13 @@
 package NNU.Editor;
 
-import static NNU.Editor.Utils.EditorName;
+import static NNU.Editor.Utils.Utils.EDITORNAME;
 
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Frame;
-import java.awt.Insets;
+import java.awt.Graphics;
 import java.awt.Toolkit;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
@@ -17,28 +16,30 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URL;
-import java.net.URLDecoder;
-import java.util.Scanner;
+import java.util.ArrayList;
+import java.util.List;
 
+import javax.swing.JApplet;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
 import javax.swing.KeyStroke;
-import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingUtilities;
+import javax.swing.UIDefaults;
 import javax.swing.UIManager;
+import javax.swing.plaf.ColorUIResource;
+import javax.swing.plaf.metal.DefaultMetalTheme;
 
-import org.fife.ui.rsyntaxtextarea.Theme;
-import org.fife.ui.rtextarea.ConfigurableCaret;
+import NNU.Editor.Menus.MenuThingy;
+import NNU.Editor.Utils.Unfinnished;
+import NNU.Editor.Utils.Utils;
+import NNU.Editor.Utils.ValueNotFoundException;
+import NNU.Editor.Windows.AboutWindow;
+import NNU.Editor.Windows.PrefrencesWindow;
+import NNU.Editor.Windows.TextEditorWindow;
+import NNU.Editor.Windows.Window;
 
 /**
  * the editor
@@ -46,16 +47,27 @@ import org.fife.ui.rtextarea.ConfigurableCaret;
 public class App extends JFrame {
 	private static final long serialVersionUID = 5770603365260133811L;
     public static final Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-    public static final int MenuBarSize = 30;
-    public static final Color MenuBG = new Color(33, 33, 33);
+    public static final Color MenuBG = new Color(24, 24, 33);
     public static final Color MenuFG = new Color(240, 240, 240);
-	public SyntaxTextArea textArea;
-	public boolean saved = true;
-	public boolean isbusy = false;
+	public Window SelectedWindow;
+	public List<Window> Windows = new ArrayList<Window>();
+	public JPanel contentpane;
+	public MenuThingy ToolBar;
 	/**
 	 * The settings
 	 */
 	public final Settings stng;
+
+	private static final int MNBS = 30;
+	private static final int TBS = 50;
+	
+	public static int MenuBarSize() {
+		return MNBS;
+	}
+	
+	public static int TabSize() {
+		return TBS;
+	}
 	
 	@Override
 	public Font getFont() {
@@ -69,120 +81,182 @@ public class App extends JFrame {
 		}
 	}
 	
+	public Font getTipFont() {
+		return new Font("Arial", Font.BOLD, 40);
+	}
+	
 	/**
 	 * the app
 	 * @param filepath the path to read from upon startup (leave empty for none)
 	 * @throws IOException
 	 */
     public App(String filepath) throws IOException {
+		this.setOpacity(1);
     	
-    	File stfile = new File(getProgramPath() + "/" + EditorName + "/" + EditorName + ".properties");
+    	File stfile = new File(Utils.getProgramPath() +
+    			"/" + EDITORNAME + "/" + EDITORNAME + ".properties");
     	stng = new Settings(stfile.getAbsolutePath(), this);
     	
-    	String starttext = "";
+    	String starttext = "TextArea1";
     	
     	if (!"".equals(filepath)) {
-    		starttext = read(filepath);
+    		starttext = Utils.read(filepath);
     	}
 
         setSize((int)screenSize.getWidth()/2,(int)screenSize.getHeight()/2);
         
+        
+        
     	try {
     	    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+    	    UIManager.put("JFrame.activeTitleBackground", Color.red);
+    	    UIDefaults uiDefaults = UIManager.getDefaults();
+    	    uiDefaults.put("activeCaption", new javax.swing.plaf.ColorUIResource(Color.gray));
+    	    uiDefaults.put("activeCaptionText", new javax.swing.plaf.ColorUIResource(Color.white));
+    	    JFrame.setDefaultLookAndFeelDecorated(true);
     	} catch (Exception e) {
     	    System.err.println("UI Exception caught:"+e);
     	}
-    	
-        JPanel contentpane = new JPanel(new BorderLayout());
+    	  
+        contentpane = new AppPanel(this);
 
-        textArea = new SyntaxTextArea(this);
-        
-        JScrollPane sp = new JScrollPane(textArea,
-        		ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
-        		ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        InputStream inpstr = App.class.getResourceAsStream("/NNU/Editor/Style.xml");
-        Theme theme = Theme.load(inpstr);
-        theme.apply(textArea);
-        textArea.setMargin(new Insets(0, 0, 0, 0));
-        textArea.setFont(getFont());
-        textArea.setBackground(new Color(10,10,12));
-        textArea.setForeground(Color.LIGHT_GRAY);
-        textArea.setCurrentLineHighlightColor(new Color(44,44,44));
-        textArea.setSelectionColor(new Color(99, 128, 176));
-        textArea.setSelectedTextColor(new Color(255,255,255));
-        ((ConfigurableCaret) textArea.getCaret()).setBlinkRate(0);
+        SelectedWindow = new TextEditorWindow(this,starttext);
         
         //Menu
-        MenuThingy menuBar = new MenuThingy(this );
-        menuBar.setBackground(MenuBG);
-        menuBar.setMinimumSize(new Dimension(getWidth(),100));
-        menuBar.setForeground(MenuFG);
+        ToolBar = new MenuThingy(this );
+        ToolBar.setBackground(MenuBG);
+        ToolBar.setMinimumSize(new Dimension(getWidth(),100));
+        ToolBar.setForeground(MenuFG);
         
         //Add Things to contentpane
+        ToolBar.setBounds(0, 0, getWidth(), MenuBarSize());
         contentpane.setLayout(null);
-        menuBar.setBounds(0, 0, getWidth(), MenuBarSize);
-        contentpane.add(menuBar);
-        sp.setBounds(0, MenuBarSize, getWidth(), getHeight() -MenuBarSize);
-        contentpane.add(sp);
-
-        contentpane.setSize(this.getSize());
-        sp.getHorizontalScrollBar().setPreferredSize(new Dimension(25,0));
-        sp.getHorizontalScrollBar().setLocation(sp.getWidth() - 25, 0);
-        sp.getVerticalScrollBar().setPreferredSize(new Dimension(25,100));
-        sp.getVerticalScrollBar().setLocation(sp.getWidth() - 25, 0);
+        contentpane.setSize(getSize());
+        contentpane.setOpaque(true);
+        contentpane.setBackground(MenuBG.darker());
+        contentpane.add(ToolBar);
         
         getRootPane().addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
-                menuBar.setBounds(0, 0, getWidth(), MenuBarSize);
-                sp.setBounds(0-1, MenuBarSize-3, getWidth() - 13, getHeight() -MenuBarSize - 35);
-                repaint();
+                redraw();
             }
+        });
+        
+        App frame = this;
+        
+        addWindowStateListener(e -> {
+        	redraw();
         });
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
-                close();
+                try {
+					close();
+				} catch (InterruptedException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+            }
+            @Override
+            public void windowIconified(WindowEvent e) {
+                System.out.println("Lost focus");
+            }
+            @Override
+            public void windowDeiconified(WindowEvent e) {
+                System.out.println("Gained focus");
             }
         });
-        
-        getRootPane().registerKeyboardAction(e ->
-        	megaSave()
+        /* Save current window (CTRL + S) */
+        getRootPane().registerKeyboardAction(e -> {
+	        	if (SelectedWindow!=null&&SelectedWindow.getComponent() instanceof SyntaxTextArea) {
+	        		((SyntaxTextArea)SelectedWindow.getComponent()).megaSave(false);
+	        		redraw();
+	        	}
+        	}
         	,KeyStroke.getKeyStroke(KeyEvent.VK_S,InputEvent.CTRL_DOWN_MASK),
         	JComponent.WHEN_IN_FOCUSED_WINDOW );
+        
+        /* SaveAll (CTRL + SHIFT + S) */
         getRootPane().registerKeyboardAction(e ->
-        	textArea.openfile(true)
+	    	megaSave(false)
+	    	,KeyStroke.getKeyStroke(KeyEvent.VK_S, 
+	    			InputEvent.SHIFT_DOWN_MASK | InputEvent.CTRL_DOWN_MASK),
+	    	JComponent.WHEN_IN_FOCUSED_WINDOW );
+        
+        /* Open File (CTRL + O) */
+        getRootPane().registerKeyboardAction(e -> {
+        		String file = Utils.tuneFileDialogResult(Utils.openFileDialog(false));
+        		if (file==null) return;
+        		/* Get Text Editor */
+        		TextEditorWindow tew = new TextEditorWindow
+        				(this,Utils.read(file));
+	            ((SyntaxTextArea)tew.getComponent()).FilePath = file;
+	            /* Set Selected Window and redraw() */
+                this.setSelectedWindow(tew);
+                redraw();
+        	}
 	    	,KeyStroke.getKeyStroke(KeyEvent.VK_O,InputEvent.CTRL_DOWN_MASK),
 	    	JComponent.WHEN_IN_FOCUSED_WINDOW );
+
+        /* Close Window (CTRL + W) */
         getRootPane().registerKeyboardAction(e ->
-        	textArea.openfile(true)
-	    	,KeyStroke.getKeyStroke(KeyEvent.VK_C,InputEvent.CTRL_DOWN_MASK),
+        	closeSelectedWindow()
+	    	,KeyStroke.getKeyStroke(KeyEvent.VK_W,InputEvent.CTRL_DOWN_MASK),
 	    	JComponent.WHEN_IN_FOCUSED_WINDOW );
+        
+        /* Open prefrences menu (CTRL + P) */
         getRootPane().registerKeyboardAction(e ->
-	    	new PreferencesMenu(stng,this)
+        	setSelectedWindow(new PrefrencesWindow(this))
 	    	,KeyStroke.getKeyStroke(KeyEvent.VK_P,InputEvent.CTRL_DOWN_MASK),
 	    	JComponent.WHEN_IN_FOCUSED_WINDOW );
         
+        /* Test Button (CTRL + T) */
+        getRootPane().registerKeyboardAction(e -> {
+	        	setSelectedWindow(new AboutWindow(this));
+	        }
+	    	,KeyStroke.getKeyStroke(KeyEvent.VK_T,InputEvent.CTRL_DOWN_MASK),
+	    	JComponent.WHEN_IN_FOCUSED_WINDOW );
+        
+        /*((SyntaxTextArea)new TextEditorWindow
+        	(this,Utils.read("C:\\Users\\[Insert Username]\\Desktop\\Test.txt"))
+        	.getComponent()).FilePath =
+        			"C:\\Users\\[Insert Username]\\Desktop\\Test.txt";*/
+        
+        this.setSelectedWindow(SelectedWindow);
+        
         setUndecorated(false);
-        setBackground(Color.black);
+        setBackground(MenuBG);
         setContentPane(contentpane);
-        setTitle(EditorName);
+        setTitle(EDITORNAME);
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         setLocation(getWidth()/2,getHeight()/2);
         this.setExtendedState(Frame.MAXIMIZED_BOTH);
         
-        textArea.setText(starttext);
-        textArea.setCaretPosition(0);
-        
         revalidate();
         repaint();
     }
+
+	@SuppressWarnings("unused")
+	private void openFile(String path) {
+    	redraw();
+    	SelectedWindow.getScrollPane().setVisible(false);
+		((SyntaxTextArea) 
+				new TextEditorWindow(this, Utils.read(path)).getComponent()).setSaved(false);
+		
+	}
     
-    /**
-     * the entry point of this weird ass program
+    public boolean megaSaveAll(boolean ask) {
+    	return megaSave(ask);
+    }
+
+	/**
+     * the entry point of this weird ass code editor
      * @param args which file to open at startup (leave empty for no selected file)
      */
 	public static void main(String[] args) {
+		
+		//System.setOut(new BSPS(System.out));
 		
 		final StringBuilder starttext = new StringBuilder();
 		if (args.length>0) {
@@ -196,92 +270,114 @@ public class App extends JFrame {
 		});
     }
 	
+	public void setSelectedWindow(Window w) {
+		for (Window i : Windows)
+			i.getScrollPane().setVisible(false);
+		if (w!=null) {
+			w.getScrollPane().setVisible(true);
+			SelectedWindow = w;
+		}
+		redraw();
+	}
+	
+	public boolean closeSelectedWindow() {
+		boolean b = SelectedWindow.closeEvent("");
+		if (!b) return false;
+		contentpane.remove(SelectedWindow.getComponent());
+		contentpane.remove(SelectedWindow.getTab());
+		contentpane.remove(SelectedWindow.getScrollPane());
+		SelectedWindow.getComponent().removeAll();
+		SelectedWindow.getScrollPane().removeAll();
+		Windows.remove(SelectedWindow);
+		SelectedWindow = null;
+		if (!Windows.isEmpty())
+			setSelectedWindow(Windows.get(0));
+		redraw();
+		return true;
+	}
+	
+	public void redraw() {
+		if (ToolBar!=null) ToolBar.setBounds(0, 3, getWidth(), MenuBarSize());
+		int i = 0;
+    	int tabWidth = Math.min((getWidth() - 13)/(!Windows.isEmpty() ? Windows.size() : 1),
+    			(getWidth()-13)/8);
+    	
+        for (Window win : Windows) {
+        	
+        	win.getScrollPane().setBounds( - 1, 
+        			MenuBarSize() + TabSize(), getWidth() - 13,
+        			getHeight() - MenuBarSize() - TabSize() - 45);
+        	win.getTab().setBounds(tabWidth * i , MenuBarSize(), tabWidth, TabSize());
+        	i++;
+        }
+        repaint();
+	}
+
 	/**
 	 * calls save and asks user where to save if non is selected already.
 	 * @return whether the operation was successful
 	 */
-	public boolean megaSave() {
-		if ("\000".equals(textArea.FilePath)) {
+	public boolean megaSave(boolean ask) {
+		
+		if (SelectedWindow.getComponent() instanceof SyntaxTextArea &&
+				(SelectedWindow instanceof SyntaxTextArea)&&
+				(Windows.size()==1&&"\000".equals
+				(((SyntaxTextArea)SelectedWindow.getComponent()).FilePath)))
+		{
 			int result = JOptionPane.showConfirmDialog((Component) null,
-					"Do you want to save?","alert", JOptionPane.YES_NO_CANCEL_OPTION);
-	    	if (result!=0)
+					"Do you want to save?","alert", JOptionPane.YES_NO_OPTION);
+	    	if (result==JOptionPane.NO_OPTION)
+	    		return true;
+	    	if (result==JOptionPane.CANCEL_OPTION) {
 	    		return false;
-	    	textArea.openfile(false, true);
+	    	}
+	    	((SyntaxTextArea)SelectedWindow.getComponent()).openfile(false, true);
 		}
-		return save(textArea.FilePath, textArea.getText());
-	}
-	
-	/**
-	 * saves text to the path specified
-	 * @param path the path
-	 * @param text the text
-	 * @return whether the operation was successful
-	 */
-	public boolean save(String path, String text) {
-		try {
-			saved = true;
-			FileWriter fw = new FileWriter(path);
-			fw.write(text);
-		    fw.close();
-			return true;
-		} catch (Exception e) {
-			return false;
-		}
-	}
-	
-	/**
-	 * reads a file and returns it's contents in String form.
-	 * @param path The path to file to read from.
-	 * @return the contents of said file.
-	 */
-	public static String read(String path) {
-		try {
-			File myObj = new File(path);
-			Scanner myReader = new Scanner(myObj);
-			StringBuilder strb = new StringBuilder();
-			while (myReader.hasNextLine()) {
-				strb.append(myReader.nextLine());
-				strb.append('\n');
+		if (Windows.size()!=1) {
+			boolean res = true;
+			for (Window i: Windows) {
+				res = i.Save(ask);
 			}
-			myReader.close();
-			return strb.toString();
-		} catch (FileNotFoundException e) {
-			System.out.println("An error occurred.");
-			e.printStackTrace();
+			return res;
 		}
-		return "\000";
+		if (SelectedWindow.getComponent() instanceof SyntaxTextArea)
+			return SelectedWindow.Save(ask);
+		return true;
 	}
 	
 	/**
 	 * This does nothing yet.
 	 */
 	@Unfinnished
-	public void ConfirmExit() {
+	public boolean ConfirmExit() {
 		//Planned
+		return true;
 	}
 	
 	/**
 	 * Pull up the close menu and runs System.exit(0); if user agrees.
+	 * @throws InterruptedException 
 	 */
-	public void close() {
-		if (saved&&!isbusy) System.exit(0);
-		int result = JOptionPane.showConfirmDialog(null,
-				"Do you want to exit?","alert", JOptionPane.YES_NO_OPTION);
-    	if (result==1||result==-1)
+	public void close() throws InterruptedException {
+		boolean saved = isSaved();
+		if (isBusy()) while (isBusy()) 
+			{Thread.sleep(100);System.out.println("Busy, Waiting for the clear.");}
+		
+		if (saved&&!isBusy()) System.exit(0);
+		int result = !isSaved() ? JOptionPane.showConfirmDialog(null,
+				"Do you want to exit?","alert", JOptionPane.YES_NO_OPTION) : JOptionPane.YES_OPTION;
+    	if (result==JOptionPane.NO_OPTION||result==JOptionPane.CANCEL_OPTION)
     		return;
-    	megaSave();
+    	boolean save = !isSaved() ? megaSave(true) : true;
+    	if (!save) return;
     	System.exit(0);
 	}
 	
-	/**
-	 * returns the location of the jar
-	 * @return the location of the jar
-	 * @throws UnsupportedEncodingException
-	 */
-	public static String getProgramPath() throws UnsupportedEncodingException {
-		URL url = App.class.getProtectionDomain().getCodeSource().getLocation();
-		String jarPath = URLDecoder.decode(url.getFile(), "UTF-8");
-		return new File(jarPath).getParentFile().getPath();
+	private boolean isSaved() {
+		for (Window i : Windows) {
+			if (!i.isSaved()) return false;
+		}
+		return true;
 	}
 	
 	/**
@@ -291,9 +387,23 @@ public class App extends JFrame {
 	 * @throws IOException
 	 */
 	public void refreshSettings() throws ValueNotFoundException, IOException {
-		textArea.refresh();
-		//this.revalidate();
-		//this.repaint();
+		isbusy = true;
+		for (Window i : Windows) 
+			i.refresh();
+		this.revalidate();
+		redraw();
+		isbusy = false;
 	}
+	
+	@Override 
+	public void paint(Graphics g) {
+		g.setColor(MenuBG);
+		g.fillRect(0, 0, getWidth(), getHeight()-13);
+		super.paint(g);
+	}
+	
+	protected boolean isbusy = false;
+	
+	public boolean isBusy() {return isbusy;}
 	
 }

@@ -1,6 +1,15 @@
-package NNU.Editor;
+package NNU.Editor.Utils;
 
+import static java.lang.System.getProperty;
+import static java.lang.System.out;
+
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.util.Scanner;
 
 import javax.swing.JFileChooser;
 
@@ -9,16 +18,27 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Shell;
 
-import static java.lang.System.*;
+import NNU.Editor.App;
 
 public class Utils {
 	
 	/**
 	 * the name of the editor bcz maybe I will want to change it in the future (again).
 	 */
-	public static final String EditorName = "NNUEdit";
+	public static final String EDITORNAME = "NNUEdit";
 	
 	private Utils() {}
+
+	/**
+	 * returns the location of the jar
+	 * @return the location of the jar
+	 * @throws UnsupportedEncodingException
+	 */
+	public static String getProgramPath() throws UnsupportedEncodingException {
+		URL url = App.class.getProtectionDomain().getCodeSource().getLocation();
+		String jarPath = URLDecoder.decode(url.getFile(), "UTF-8");
+		return new File(jarPath).getParentFile().getPath();
+	}
 	
 	/**
 	 * opens the file dialog
@@ -49,6 +69,35 @@ public class Utils {
 			} catch (IOException e) {e.printStackTrace();}
 		}
 		return res;
+	}
+	
+	public static String tuneFileDialogResult(String res) {
+		if (res != null&&!"/".equals(res.trim()) && !res.trim().isEmpty())
+			return res;
+		return null;
+	}
+	
+	/**
+	 * reads a file and returns it's contents in String form.
+	 * @param path The path to file to read from.
+	 * @return the contents of said file.
+	 */
+	public static String read(String path) {
+		try {
+			File myObj = new File(path);
+			Scanner myReader = new Scanner(myObj);
+			StringBuilder strb = new StringBuilder();
+			while (myReader.hasNextLine()) {
+				strb.append(myReader.nextLine());
+				strb.append('\n');
+			}
+			myReader.close();
+			return strb.toString();
+		} catch (FileNotFoundException e) {
+			System.out.println("An error occurred.");
+			e.printStackTrace();
+		}
+		return "\000";
 	}
 
 }

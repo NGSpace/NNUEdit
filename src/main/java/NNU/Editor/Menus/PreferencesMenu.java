@@ -1,6 +1,6 @@
-package NNU.Editor;
+package NNU.Editor.Menus;
 
-import static NNU.Editor.Utils.EditorName;
+import static NNU.Editor.Utils.Utils.EDITORNAME;
 
 import java.awt.Color;
 import java.awt.Component;
@@ -32,6 +32,9 @@ import javax.swing.plaf.basic.BasicComboBoxUI;
 
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 
+import NNU.Editor.App;
+import NNU.Editor.Settings;
+
 public class PreferencesMenu extends JFrame {
 	
 	/**
@@ -39,7 +42,15 @@ public class PreferencesMenu extends JFrame {
 	 */
 	private static final long serialVersionUID = 5027581198213070489L;
 	
+	public static final String FT = "Tahoma";
+	
 	protected JPanel contentpane = new JPanel() {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = -5269766806209044977L;
+
+		@Override
 		public void paintComponent(Graphics g){
 		    super.paintComponent(g);
 
@@ -64,7 +75,7 @@ public class PreferencesMenu extends JFrame {
 		this.setLocationRelativeTo(app);
 		this.setBackground(App.MenuBG);
 		this.setForeground(App.MenuFG);
-		this.setTitle(EditorName + "'s Prefrences");
+		this.setTitle(EDITORNAME + "'s Prefrences");
 		contentpane.setOpaque(true);
 		contentpane.setBackground(App.MenuBG);
 		contentpane.setForeground(App.MenuFG);
@@ -75,7 +86,8 @@ public class PreferencesMenu extends JFrame {
 	    scrollPane.setOpaque(true);
 		getContentPane().add(scrollPane);
 		refresh();
-		this.setVisible(true);
+		this.setVisible(false);
+		app.repaint();
 	}
 	
 	public void refresh() {
@@ -97,7 +109,7 @@ public class PreferencesMenu extends JFrame {
 	
 	protected void InitFontSettings() {
 		JLabel jlb = new JLabel();
-		jlb.setFont(new Font("Tahoma", Font.BOLD, 26));
+		jlb.setFont(new Font(FT, Font.BOLD, 26));
 		jlb.setHorizontalAlignment(SwingConstants.CENTER);
 		jlb.setText("Choose Font:");
 		jlb.setSize(178, 93);
@@ -125,14 +137,14 @@ public class PreferencesMenu extends JFrame {
 		btnNewButton.addMouseListener(new MouseAdapter() {
 			@Override public void mouseClicked(MouseEvent e) {try {
 				ClickFontSettings();} catch (Exception e1) {e1.printStackTrace();}}});
-		btnNewButton.setFont(new Font("Tahoma", Font.BOLD, 14));
+		btnNewButton.setFont(new Font(FT, Font.BOLD, 14));
 		btnNewButton.setBounds(491, 79, 134, 41);
 		btnNewButton.setBackground(App.MenuBG);
 		btnNewButton.setOpaque(true);
 		contentpane.add(btnNewButton);
 	}
 	
-	protected void ClickFontSettings() throws ValueNotFoundException {
+	protected void ClickFontSettings() {
 		JFontChooser jfc = new JFontChooser();
 		jfc.setSelectedFont(app.getFont());
 		jfc.showDialog(this);
@@ -151,7 +163,7 @@ public class PreferencesMenu extends JFrame {
 	
 	protected void InitSyntaxSettings() throws Exception {
 		JLabel jlb = new JLabel();
-		jlb.setFont(new Font("Tahoma", Font.BOLD, 24));
+		jlb.setFont(new Font(FT, Font.BOLD, 24));
 		jlb.setHorizontalAlignment(SwingConstants.CENTER);
 		jlb.setText("Choose Langauge:");
 		jlb.setSize(234, 93);
@@ -160,7 +172,6 @@ public class PreferencesMenu extends JFrame {
 		contentpane.add(jlb);
 		Field[] fields = SyntaxConstants.class.getDeclaredFields();
 		for(Field f : fields){
-			  f.setAccessible(true);
 			  Object objectValue = "";
 			  Object value = f.get(objectValue);
 			  values.put(f.getName().replace("SYNTAX_STYLE_", "").toLowerCase().replace('_', ' '),
@@ -177,7 +188,7 @@ public class PreferencesMenu extends JFrame {
         jls.setUI(new BasicComboBoxUI() {
             @Override protected JButton createArrowButton()
             {
-                return new BasicArrowButton(BasicArrowButton.SOUTH, null, null, Color.GRAY, null);
+                return new BasicArrowButton(SwingConstants.SOUTH, null, null, Color.GRAY, null);
             }
         });
         jls.setBackground(App.MenuBG);
@@ -208,9 +219,14 @@ public class PreferencesMenu extends JFrame {
 
 }
 class CustomComboBoxRenderer extends DefaultListCellRenderer {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -2702235431578141710L;
+
 	@Override
 	public Component getListCellRendererComponent
-		(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+		(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
 		
 		JLabel lbl = (JLabel)super.getListCellRendererComponent
 				(list, value, index, isSelected,  cellHasFocus);
