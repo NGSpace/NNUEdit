@@ -1,49 +1,47 @@
 package NNU.Editor.Windows;
 
-import java.awt.Dimension;
 import java.io.File;
 import java.io.IOException;
 
 import javax.swing.JComponent;
-import javax.swing.JScrollPane;
 
 import NNU.Editor.App;
 import NNU.Editor.SyntaxTextArea;
-import NNU.Editor.Tab;
+import NNU.Editor.Menus.Components.NGSScrollPane;
+import NNU.Editor.Menus.Components.Tab;
 import NNU.Editor.Utils.ValueNotFoundException;
 
-public class TextEditorWindow implements Window  {
+public class TextEditorWindow implements Window {
 
-	protected JScrollPane sp;
 	protected SyntaxTextArea textArea;
+	protected NGSScrollPane sp;
 	protected Tab tab;
-	protected final App app;
+	protected App app;
 
 	public TextEditorWindow(App app, String Text) {
         
 		this.app = app;
-		
+
+        sp = new NGSScrollPane(app);
+        
 		textArea = new SyntaxTextArea(app,this);
-        sp = new JScrollPane(textArea);
+		sp.setViewportView(textArea);
+		
+        sp.setBorder(null);
+        sp.setOpaque(true);
+        
         tab = new Tab(app, this);
         
         sp.setBounds(0, App.MenuBarSize(), app.getWidth(),
         		app.getHeight() - App.MenuBarSize() - App.TabSize());
-        
-        sp.getHorizontalScrollBar().setPreferredSize(new Dimension(25,0));
-        sp.getHorizontalScrollBar().setLocation(sp.getWidth() - 25, 0);
-        sp.getVerticalScrollBar().setPreferredSize(new Dimension(25,100));
-        sp.getVerticalScrollBar().setLocation(sp.getWidth() - 25, 0);
-        
-        sp.setOpaque(true);
 
         app.contentpane.add(getScrollPane());
         app.contentpane.add(getTab());
         app.Windows.add(this);
         textArea.setOpaque(true);
         textArea.setText(Text);
-        textArea.setSaved(true);
         textArea.setCaretPosition(0);
+        textArea.setSaved(true);
         app.redraw();
 	}
 
@@ -54,12 +52,12 @@ public class TextEditorWindow implements Window  {
 
 	@Override
 	public String getTitle() {
-		return ("\000".equals(textArea.FilePath) ? "Unknown" : 
-			new File(textArea.FilePath).getName()) + (textArea.isSaved() ? "" : "*");
+		return ("\000".equals(textArea.getFilePath()) ? "Unknown" : 
+			new File(textArea.getFilePath()).getName()) + (textArea.isSaved() ? "" : "*");
 	}
 
 	@Override
-	public JScrollPane getScrollPane() {
+	public NGSScrollPane getScrollPane() {
 		return sp;
 	}
 	
@@ -75,15 +73,12 @@ public class TextEditorWindow implements Window  {
 
 	@Override
 	public boolean Save(boolean ask) {
-		boolean res = textArea.megaSave(ask);
-		getTab().repaint();
-		return res;
+		return textArea.megaSave(ask);
 	}
 
 	@Override
 	public void refresh() throws ValueNotFoundException, IOException {
 		textArea.refresh();
-		tab.setFont(textArea.getFont());
 		tab.setText(getTitle());
 	}
 
@@ -93,9 +88,22 @@ public class TextEditorWindow implements Window  {
 	}
 
 	@Override
-	public boolean closeEvent(String Reason) {
-		
-		return Save("\000".equals(textArea.FilePath));
+	public boolean closeEvent(Object... Reason) {
+		if (Reason.length>0&&Reason[0]!=null) {
+			return Save((boolean) Reason[0]);
+		} else {
+			return Save("\000".equals(textArea.getFilePath()));
+		}
+	}
+
+	@Override
+	public void resize() {
+		textArea.Resize();
+		textArea.resizeButton(sp);
+	}
+
+	@Override
+	public void delete() {
 	}
 
 }

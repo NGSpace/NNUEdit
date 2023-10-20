@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>NNU</groupId>
   <artifactId>NNUEdit</artifactId>
-  <version>0.6</version>
+  <packaging>jar</packaging>
+  <version>1.0</version>
 
   <name>NNUEdit</name>
   <description>Custom Code Editor made by NGS</description>
@@ -18,21 +18,58 @@
   </properties>
 
   <dependencies>
-	  <!-- https://mvnrepository.com/artifact/org.eclipse.swt/org.eclipse.swt.gtk.linux.x86_64 -->
+	<!-- https://mvnrepository.com/artifact/org.eclipse.platform/org.eclipse.swt.gtk.linux.x86_64 ->
 	<dependency>
-	    <groupId>org.eclipse.swt</groupId>
-	    <artifactId>org.eclipse.swt.win32.win32.x86_64</artifactId>
-	    <version>4.3</version>
-	    <scope>provided</scope>
+	    <groupId>org.eclipse.platform</groupId>
+	    <artifactId>org.eclipse.swt.gtk.linux.x86_64</artifactId>
+	    <version>3.124.100</version>
+	</dependency->
+	  <!- https://mvnrepository.com/artifact/org.eclipse.swt/org.eclipse.swt.gtk.linux.x86_64 -->
+	<dependency>
+	  <groupId>org.eclipse.swt</groupId>
+	  <artifactId>org.eclipse.swt.win32.win32.x86_64</artifactId>
+	  <version>4.3</version>
+	  <scope>provided</scope>
 	</dependency>
     <dependency>
 	  <groupId>de.tisoft.rsyntaxtextarea</groupId>
 	  <artifactId>rsyntaxtextarea-antlr4-extension</artifactId>
 	  <version>0.0.3</version>
 	</dependency>
+    <dependency>
+		<groupId>com.fifesoft</groupId>
+		<artifactId>autocomplete</artifactId>
+		<version>3.3.1</version>
+	</dependency>
+	<!-- https://mvnrepository.com/artifact/com.formdev/flatlaf -->
+	<dependency>
+	    <groupId>com.formdev</groupId>
+	    <artifactId>flatlaf</artifactId>
+	    <version>3.2</version>
+	</dependency>
+	<!-- https://mvnrepository.com/artifact/com.formdev/flatlaf-extras -->
+	<dependency>
+	    <groupId>com.formdev</groupId>
+	    <artifactId>flatlaf-extras</artifactId>
+	    <version>3.2.1</version>
+	</dependency>
+	<dependency>
+	  <groupId>org.apache.maven</groupId>
+	  <artifactId>maven-model</artifactId>
+	  <version>3.3.9</version>
+	</dependency>
   </dependencies>
 
   <build>
+        <resources>
+            <resource>
+                <directory>${basedir}/src/main/java</directory>
+	            <excludes>
+	                <exclude>**/*.java</exclude>
+	            </excludes>
+            	<filtering>true</filtering>	
+            </resource>
+        </resources>
     <pluginManagement><!-- lock down plugins versions to avoid using Maven defaults (may be moved to parent pom) -->
       <plugins>
         <!-- clean lifecycle, see https://maven.apache.org/ref/current/maven-core/lifecycles.html#clean_Lifecycle -->
@@ -56,6 +93,14 @@
         <plugin>
           <artifactId>maven-jar-plugin</artifactId>
           <version>3.0.2</version>
+		    <configuration>
+		        <includes>
+		            <include>*</include>
+		            <include>*</include>
+		            <include>*</include>
+		            <include>*</include>
+		        </includes>
+		    </configuration>
         </plugin>
         <plugin>
           <artifactId>maven-install-plugin</artifactId>

@@ -3,10 +3,10 @@ package NNU.Editor.Windows;
 import java.io.IOException;
 
 import javax.swing.JComponent;
-import javax.swing.JScrollPane;
 
 import NNU.Editor.App;
-import NNU.Editor.Tab;
+import NNU.Editor.Menus.Components.NGSScrollPane;
+import NNU.Editor.Menus.Components.Tab;
 import NNU.Editor.Utils.ValueNotFoundException;
 
 public interface Window {
@@ -16,11 +16,15 @@ public interface Window {
 	public boolean isSaved();
 	public boolean Save(boolean ask);
 	public String getTitle();
-	public JScrollPane getScrollPane();
+	public NGSScrollPane getScrollPane();
 	public JComponent getComponent();
+	public void delete();
 	public Tab getTab();
 	public App getApp();
-	public boolean closeEvent(String Reason);
+	public boolean closeEvent(Object... Reason);
+	public default void lostFocus(Window newWindow) {}
+	public default void gainedFocus(Window prevWindow) {}
 	public void refresh() throws ValueNotFoundException, IOException;
+	public void resize();
 	
 }

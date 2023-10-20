@@ -1,7 +1,5 @@
 package NNU.Editor;
 
-import static NNU.Editor.Utils.Utils.EDITORNAME;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
@@ -24,7 +22,7 @@ public class Settings {
 	 * The default values read from "/NNU/Editor/NNUEdit.properties" in the jar file
 	 */
 	public static final Map<String,Object> defaults = 
-			new Settings(App.class.getResourceAsStream("/NNU/Editor/" + EDITORNAME + ".properties")).map;
+			new Settings(App.class.getResourceAsStream("/NNU/Editor/NNUEdit.properties")).map;
 	public final App app;
 	
 	/**
@@ -85,6 +83,7 @@ public class Settings {
 		StringBuilder strb = new StringBuilder();
 		while (myReader.hasNextLine())
 			strb.append(myReader.nextLine() + "\n");
+		//System.out.println(strb);
 	    myReader.close();
 	    finalizelist(strb.toString());
 	}
@@ -114,11 +113,30 @@ public class Settings {
 				save();
 			} catch (IOException e) {e.printStackTrace();}
 		}
-		if (res==null)
+		if (res==null) {
+			for (Map.Entry<String, Object> entry : map.entrySet()) {
+			    System.out.println(entry.getKey()+" : "+entry.getValue());
+			}
 			throw new ValueNotFoundException("The key " + key + 
 					" does not exist in either user settings or defaults");
+		}
 		return res;
 		
+	}
+	public boolean getBoolean(String key) throws ValueNotFoundException {
+		return Boolean.TRUE.equals(Boolean.valueOf(get(key)));
+		
+	}
+	
+	protected String getKey(Map<String, Object> map, String value) {
+		for(Entry<String, Object> entry: map.entrySet()) {
+			// if give value is equal to value from entry
+			// print the corresponding key
+			if(entry.getValue().equals(value)) {
+				return entry.getKey();
+			}
+		}
+		return null;
 	}
 	public void set(String key,Object value) {
 		map.put(key, value);
@@ -126,6 +144,9 @@ public class Settings {
 			save();
 		} catch (IOException e) {e.printStackTrace();}
 		
+	}
+	public int getInt(String string) throws ValueNotFoundException {
+		return Integer.valueOf(get(string));
 	}
 	
 	

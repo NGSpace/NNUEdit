@@ -89,7 +89,7 @@ public class JFontChooser extends JComponent
     private static final String[] DEFAULT_FONT_SIZE_STRINGS =
     {
         "8", "9", "10", "11", "12", "14", "16", "18", "20",
-        "22", "24", "26", "28", "36", "48", "72",
+        "22", "24", "26", "28", "36", "40", "48", "72",
     };
 
     // instance variables
@@ -251,8 +251,7 @@ public class JFontChooser extends JComponent
      **/
     public String getSelectedFontFamily()
     {
-        String fontName = (String) getFontFamilyList().getSelectedValue();
-        return fontName;
+        return (String) getFontFamilyList().getSelectedValue();
     }
 
     /**
@@ -412,6 +411,7 @@ public class JFontChooser extends JComponent
         JDialog dialog = createDialog(parent);
         dialog.addWindowListener(new WindowAdapter()
         {
+            @Override
             public void windowClosing(WindowEvent e)
             {
                 dialogResultValue = CANCEL_OPTION;
@@ -793,6 +793,7 @@ public class JFontChooser extends JComponent
             Border lowered = BorderFactory.createLoweredBevelBorder();
 
             sampleText = new JTextField(("AaBbYyZz"));
+            sampleText.setEditable(false);
             sampleText.setBorder(lowered);
             sampleText.setPreferredSize(new Dimension(300, 100));
         }

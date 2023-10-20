@@ -8,36 +8,52 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Frame;
 import java.awt.Graphics;
+import java.awt.KeyboardFocusManager;
 import java.awt.Toolkit;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.UnsupportedFlavorException;
+import java.awt.dnd.DnDConstants;
+import java.awt.dnd.DropTarget;
+import java.awt.dnd.DropTargetAdapter;
+import java.awt.dnd.DropTargetDropEvent;
+import java.awt.dnd.DropTargetListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.InputEvent;
+import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.event.WindowFocusListener;
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
-import javax.swing.JApplet;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
-import javax.swing.SwingUtilities;
-import javax.swing.UIDefaults;
-import javax.swing.UIManager;
-import javax.swing.plaf.ColorUIResource;
-import javax.swing.plaf.metal.DefaultMetalTheme;
+import javax.swing.border.EmptyBorder;
 
-import NNU.Editor.Menus.MenuThingy;
+import NNU.Editor.Menus.Components.FolderButton;
+import NNU.Editor.Menus.Components.MenuThingy;
+import NNU.Editor.Menus.Components.Tab;
+import NNU.Editor.Runners.GitRunner;
+import NNU.Editor.Runners.HTMLRunner;
+import NNU.Editor.Runners.IRunner;
+import NNU.Editor.Runners.ShellRunner;
 import NNU.Editor.Utils.Unfinnished;
 import NNU.Editor.Utils.Utils;
 import NNU.Editor.Utils.ValueNotFoundException;
-import NNU.Editor.Windows.AboutWindow;
-import NNU.Editor.Windows.PrefrencesWindow;
+import NNU.Editor.Windows.GitWindow;
+import NNU.Editor.Windows.PreferencesWindow;
 import NNU.Editor.Windows.TextEditorWindow;
 import NNU.Editor.Windows.Window;
 
@@ -47,25 +63,36 @@ import NNU.Editor.Windows.Window;
 public class App extends JFrame {
 	private static final long serialVersionUID = 5770603365260133811L;
     public static final Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-    public static final Color MenuBG = new Color(24, 24, 33);
+    public static Color MenuBG = new Color(19, 19, 26);
     public static final Color MenuFG = new Color(240, 240, 240);
-	public Window SelectedWindow;
+    public static final String TITLEBARBG = "JRootPane.titleBarBackground";
+	private Window SelectedWindow;
 	public List<Window> Windows = new ArrayList<Window>();
 	public JPanel contentpane;
+	public FolderPanel Folder;
 	public MenuThingy ToolBar;
 	/**
 	 * The settings
 	 */
 	public final Settings stng;
+	public static final Map<String, Object> fileext = new Settings
+			(App.class.getResourceAsStream("/NNU/Editor/FileExt.properties")).map;
 
 	private static final int MNBS = 30;
 	private static final int TBS = 50;
+	protected boolean isbusy = false;
+	
+	public boolean isBusy() {return isbusy;}
 	
 	public static int MenuBarSize() {
 		return MNBS;
 	}
 	
 	public static int TabSize() {
+		return TBS;
+	}
+	
+	public static int FolderSize() {
 		return TBS;
 	}
 	
@@ -90,92 +117,206 @@ public class App extends JFrame {
 	 * @param filepath the path to read from upon startup (leave empty for none)
 	 * @throws IOException
 	 */
-    public App(String filepath) throws IOException {
+	public App(String filepath) throws IOException {
+    	
 		this.setOpacity(1);
     	
     	File stfile = new File(Utils.getProgramPath() +
     			"/" + EDITORNAME + "/" + EDITORNAME + ".properties");
     	stng = new Settings(stfile.getAbsolutePath(), this);
     	
+    	try {
+			MenuBG = new Color(stng.getInt("bgcolor r"),stng.getInt("bgcolor g"),stng.getInt("bgcolor b"));
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    	
     	String starttext = "";
+    	String startfolder = "\000";
     	
     	if (!"".equals(filepath)) {
-    		starttext = Utils.read(filepath);
+    		if (!new File(filepath).isDirectory())
+    			starttext = Utils.read(filepath);
+    		else
+    			startfolder = new File(filepath).getAbsolutePath();
     	}
+    	
+    	this.setIconImage(Utils.ResizeImage(Utils.ReadImageIcon("ui/NNUEdit72x72.png").getImage(),64,64));
 
         setSize((int)screenSize.getWidth()/2,(int)screenSize.getHeight()/2);
         
+
+        // Create the drag and drop listener
+        DropTargetListener myDragDropListener = new DropTargetAdapter() {
+			@SuppressWarnings("unchecked")
+			@Override
+			public void drop(DropTargetDropEvent dtde) {
+				dtde.acceptDrop(DnDConstants.ACTION_COPY);
+	            List<File> droppedFiles = null;
+				try {
+					droppedFiles = (List<File>)
+							dtde.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
+				} catch (UnsupportedFlavorException | IOException e) {e.printStackTrace();}
+	            for (File file : droppedFiles) {
+	                openFile(file.getAbsolutePath());
+	            }
+			}
+        };
+
+        // Connect the label with a drag and drop listener
+        new DropTarget(this, myDragDropListener);
         
+        contentpane = new AppPanel(this); 
         
+        contentpane.addMouseMotionListener(new MouseMotionListener() {
+			@Override public void mouseDragged(MouseEvent e) {}
+			@Override public void mouseMoved(MouseEvent e) {
+				if (SelectedWindow!=null&&SelectedWindow.getComponent() instanceof FolderButton)
+					((FolderButton) SelectedWindow.getComponent())
+						.getFolderButton().setVisible(e.getX()<FolderButton.MINIMUM_DISTANCE);
+			}
+		});
+        
+        Folder = new FolderPanel(this);
+        Folder.setBounds(0,0,300,getHeight()-MenuBarSize()-TabSize());
+        Folder.setVisible(true);
+        Folder.setFolderPath(startfolder);
+        contentpane.add(Folder);
+        
+        setContentPane(contentpane);
     	try {
-    	    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-    	    UIManager.put("JFrame.activeTitleBackground", Color.red);
-    	    UIDefaults uiDefaults = UIManager.getDefaults();
-    	    uiDefaults.put("activeCaption", new javax.swing.plaf.ColorUIResource(Color.gray));
-    	    uiDefaults.put("activeCaptionText", new javax.swing.plaf.ColorUIResource(Color.white));
-    	    JFrame.setDefaultLookAndFeelDecorated(true);
+    		setDefaultLookAndFeelDecorated(true);
+    		getRootPane().putClientProperty("JRootPane.titleBarForeground", Color.white);
+    		getRootPane().putClientProperty("JRootPane.menuBarEmbedded", false);
     	} catch (Exception e) {
-    	    System.err.println("UI Exception caught:"+e);
+    	    System.err.println("UI Exception caught: " + e);
     	}
-    	  
-        contentpane = new AppPanel(this);
 
         SelectedWindow = new TextEditorWindow(this,starttext);
+        ((SyntaxTextArea)SelectedWindow.getComponent()).setFilePath(
+        		new File(filepath).isDirectory() || "".equals(filepath) ? "\000" : filepath);
+        ((SyntaxTextArea)SelectedWindow.getComponent()).setSaved(true);
         
         //Menu
-        ToolBar = new MenuThingy(this );
+        ToolBar = new MenuThingy(this);
         ToolBar.setBackground(MenuBG);
         ToolBar.setMinimumSize(new Dimension(getWidth(),100));
         ToolBar.setForeground(MenuFG);
+        //this.setJMenuBar(ToolBar);
+        
+        
         
         //Add Things to contentpane
         ToolBar.setBounds(0, 0, getWidth(), MenuBarSize());
         contentpane.setLayout(null);
         contentpane.setSize(getSize());
         contentpane.setOpaque(true);
-        contentpane.setBackground(MenuBG.darker());
+        contentpane.setBackground(MenuBG.brighter());
         contentpane.add(ToolBar);
+        //contentpane.add(ToolBar);
         
-        getRootPane().addComponentListener(new ComponentAdapter() {
-            @Override
-            public void componentResized(ComponentEvent e) {
-                redraw();
-            }
-        });
-        
-        App frame = this;
-        
-        addWindowStateListener(e -> {
-        	redraw();
-        });
+        addWindowStateListener(e -> redraw());
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
                 try {
 					close();
-				} catch (InterruptedException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-            }
-            @Override
-            public void windowIconified(WindowEvent e) {
-                System.out.println("Lost focus");
-            }
-            @Override
-            public void windowDeiconified(WindowEvent e) {
-                System.out.println("Gained focus");
+				} catch (InterruptedException e1) {e1.printStackTrace();}
             }
         });
+
+        addWindowFocusListener( new WindowFocusListener() {
+            @Override public void windowLostFocus(WindowEvent e) {
+        		getRootPane().putClientProperty(TITLEBARBG,
+        				Color.LIGHT_GRAY.darker().darker().darker().darker());
+            }
+            @Override public void windowGainedFocus(WindowEvent e) {
+        		getRootPane().putClientProperty(TITLEBARBG, Color.black);
+            }
+        });
+        
+        initListeners();
+        
+        setUndecorated(false);
+        setBackground(MenuBG);
+        setTitle(EDITORNAME);
+        setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+        setLocation(getWidth()/2,getHeight()/2);
+        this.contentpane.setDoubleBuffered(true);
+        this.setExtendedState(Frame.MAXIMIZED_BOTH);
+        
+        getRootPane().addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+            	redraw();
+            	contentpane.repaint();
+            }
+            @Override
+            public void componentMoved(ComponentEvent e) {
+            	redraw();
+            	contentpane.repaint();
+            }
+        });
+        
+        this.setSelectedWindow(SelectedWindow);
+        redraw();
+        repaint();
+        
+    }
+	
+	public void initListeners() {
+		
         /* Save current window (CTRL + S) */
         getRootPane().registerKeyboardAction(e -> {
 	        	if (SelectedWindow!=null&&SelectedWindow.getComponent() instanceof SyntaxTextArea) {
 	        		((SyntaxTextArea)SelectedWindow.getComponent()).megaSave(false);
-	        		redraw();
 	        	}
         	}
         	,KeyStroke.getKeyStroke(KeyEvent.VK_S,InputEvent.CTRL_DOWN_MASK),
         	JComponent.WHEN_IN_FOCUSED_WINDOW );
+        
+        
+        
+        /* New (CTRL + N) */
+        getRootPane().registerKeyboardAction(e -> {
+	    		/* Get Text Editor */
+	    		TextEditorWindow tew = new TextEditorWindow(this, "");
+	            this.setSelectedWindow(tew);
+	    	}
+	    	,KeyStroke.getKeyStroke(KeyEvent.VK_N, InputEvent.CTRL_DOWN_MASK),
+	    	JComponent.WHEN_IN_FOCUSED_WINDOW );
+        
+        
+
+        /* Find (CTRL + F) */
+        getRootPane().registerKeyboardAction(e -> {
+		    	if (getSelectedWindow()!=null 
+		    			&& (getSelectedWindow().getComponent() instanceof SyntaxTextArea )) {
+					SyntaxTextArea tx = (SyntaxTextArea) getSelectedWindow().getComponent();
+					tx.openFind();
+		    	}
+	    	}
+	    	,KeyStroke.getKeyStroke(KeyEvent.VK_F, InputEvent.CTRL_DOWN_MASK),
+	    	JComponent.WHEN_IN_FOCUSED_WINDOW );
+        
+        
+
+        /* Escape (ESCAPE) */
+        getRootPane().registerKeyboardAction(e -> {
+		    	if (getSelectedWindow()!=null 
+		    			&&(getSelectedWindow().getComponent() instanceof SyntaxTextArea)
+		    			&&((SyntaxTextArea) getSelectedWindow().getComponent()).fm!=null) {
+					SyntaxTextArea tx = (SyntaxTextArea) getSelectedWindow().getComponent();
+					tx.remove(tx.fm);
+					tx.fm = null;
+					tx.repaint();
+		    	}
+	    	}
+	    	,KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
+	    	JComponent.WHEN_IN_FOCUSED_WINDOW );
+        
+        
         
         /* SaveAll (CTRL + SHIFT + S) */
         getRootPane().registerKeyboardAction(e ->
@@ -184,6 +325,8 @@ public class App extends JFrame {
 	    			InputEvent.SHIFT_DOWN_MASK | InputEvent.CTRL_DOWN_MASK),
 	    	JComponent.WHEN_IN_FOCUSED_WINDOW );
         
+        
+        
         /* Open File (CTRL + O) */
         getRootPane().registerKeyboardAction(e -> {
         		String file = Utils.tuneFileDialogResult(Utils.openFileDialog(false));
@@ -191,125 +334,174 @@ public class App extends JFrame {
         		/* Get Text Editor */
         		TextEditorWindow tew = new TextEditorWindow
         				(this,Utils.read(file));
-	            ((SyntaxTextArea)tew.getComponent()).FilePath = file;
+	            ((SyntaxTextArea)tew.getComponent()).setFilePath(file);
 	            /* Set Selected Window and redraw() */
-                this.setSelectedWindow(tew);
-                redraw();
+                setSelectedWindow(tew);
         	}
 	    	,KeyStroke.getKeyStroke(KeyEvent.VK_O,InputEvent.CTRL_DOWN_MASK),
 	    	JComponent.WHEN_IN_FOCUSED_WINDOW );
 
+        
+        
         /* Close Window (CTRL + W) */
         getRootPane().registerKeyboardAction(e ->
         	closeSelectedWindow()
 	    	,KeyStroke.getKeyStroke(KeyEvent.VK_W,InputEvent.CTRL_DOWN_MASK),
 	    	JComponent.WHEN_IN_FOCUSED_WINDOW );
+
         
-        /* Open prefrences menu (CTRL + P) */
+        getRootPane().setFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS,
+        		Collections.emptySet());
+        /* Close Window (CTRL + TAB) */
+        getRootPane().registerKeyboardAction(e -> {
+        		int loc = Windows.indexOf(SelectedWindow);
+        		setSelectedWindow(Windows.get(loc+1>Windows.size()-1?0:loc+1));
+        	}
+    		,KeyStroke.getKeyStroke(KeyEvent.VK_TAB,InputEvent.CTRL_DOWN_MASK),
+	    	JComponent.WHEN_IN_FOCUSED_WINDOW );
+        
+        addKeyListener(new KeyAdapter() { @Override public void keyPressed(KeyEvent e) {}});
+        
+        /* Open preferences menu (CTRL + P) */
         getRootPane().registerKeyboardAction(e ->
-        	setSelectedWindow(new PrefrencesWindow(this))
+        	setSelectedWindow(new PreferencesWindow(this))
 	    	,KeyStroke.getKeyStroke(KeyEvent.VK_P,InputEvent.CTRL_DOWN_MASK),
 	    	JComponent.WHEN_IN_FOCUSED_WINDOW );
         
-        /* Test Button (CTRL + T) */
-        getRootPane().registerKeyboardAction(e -> {
-	        	//setSelectedWindow(new AboutWindow(this));
-	        }
-	    	,KeyStroke.getKeyStroke(KeyEvent.VK_T,InputEvent.CTRL_DOWN_MASK),
+        
+        
+        /* Test Button (F5) */
+        getRootPane().registerKeyboardAction(e -> 
+        	RunApp()
+	    	,KeyStroke.getKeyStroke("F5"),
 	    	JComponent.WHEN_IN_FOCUSED_WINDOW );
         
-        /*((SyntaxTextArea)new TextEditorWindow
-        	(this,Utils.read("C:\\Users\\[Insert Username]\\Desktop\\Test.txt"))
-        	.getComponent()).FilePath =
-        			"C:\\Users\\[Insert Username]\\Desktop\\Test.txt";*/
         
-        this.setSelectedWindow(SelectedWindow);
         
-        setUndecorated(false);
-        setBackground(MenuBG);
-        setContentPane(contentpane);
-        setTitle(EDITORNAME);
-        setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
-        setLocation(getWidth()/2,getHeight()/2);
-        this.setExtendedState(Frame.MAXIMIZED_BOTH);
-        
-        revalidate();
-        repaint();
-    }
+        /* Test Button (CTRL + T) */
+        getRootPane().registerKeyboardAction(e -> 
+        	{
+				try {
+	        		if (stng.getBoolean("testbutton"))
+	        			restartApplication();
+				} catch (URISyntaxException | IOException | ValueNotFoundException e1) {
+					e1.printStackTrace();
+				}
+			}
+	    	,KeyStroke.getKeyStroke(KeyEvent.VK_T,InputEvent.CTRL_DOWN_MASK),
+	    	JComponent.WHEN_IN_FOCUSED_WINDOW );
+	}
+	
+	public static List<IRunner> runners = new ArrayList<IRunner>();
+	
+	static {
+		//runners.add(new GitRunner());
+		runners.add(new ShellRunner());
+		runners.add(new HTMLRunner());
+	}
+	
+	public void RunApp() {
+		if (megaSave(!isSaved()))
+			for (IRunner runner : runners) {
+				if (runner.canRun(this)) {
+					runner.Run(this);
+					return;
+				}
+			}
+	}
 
-	@SuppressWarnings("unused")
-	private void openFile(String path) {
-    	redraw();
-    	SelectedWindow.getScrollPane().setVisible(false);
-		((SyntaxTextArea) 
-				new TextEditorWindow(this, Utils.read(path)).getComponent()).setSaved(false);
-		
+	public void openFile(String path) {
+		for (Window i : Windows) {
+			if (i.getComponent()instanceof SyntaxTextArea&&
+					((SyntaxTextArea)i.getComponent()).getFilePath().equals(path)) {
+				setSelectedWindow(i);
+				return;
+			}
+		}
+		Window w = new TextEditorWindow(this, Utils.read(path));
+    	SyntaxTextArea sy = ((SyntaxTextArea) 
+				w.getComponent());
+		sy.setFilePath(path);
+		setSelectedWindow(w);
+		sy.setSaved(true);
 	}
     
     public boolean megaSaveAll(boolean ask) {
     	return megaSave(ask);
-    }
-
-	/**
-     * the entry point of this weird ass code editor
-     * @param args which file to open at startup (leave empty for no selected file)
-     */
-	public static void main(String[] args) {
-		
-		//System.setOut(new BSPS(System.out));
-		
-		final StringBuilder starttext = new StringBuilder();
-		if (args.length>0) {
-			starttext.append(args[0]);
-		}
-		
-        SwingUtilities.invokeLater(() -> {
-			try {
-				new App(starttext.toString()).setVisible(true);
-			} catch (Exception e) {e.printStackTrace();}
-		});
     }
 	
 	public void setSelectedWindow(Window w) {
 		for (Window i : Windows)
 			i.getScrollPane().setVisible(false);
 		if (w!=null) {
+			if (SelectedWindow!=null) SelectedWindow.lostFocus(w);
+			w.gainedFocus(SelectedWindow);
 			w.getScrollPane().setVisible(true);
+	        w.getComponent().setBorder(new EmptyBorder(0,5,0,0));
+			w.getComponent().requestFocus();
 			SelectedWindow = w;
+		} else {
+			Folder.setVisible(true);
 		}
 		redraw();
 	}
 	
 	public boolean closeSelectedWindow() {
-		boolean b = SelectedWindow.closeEvent("");
+		if (SelectedWindow==null) System.exit(0);
+		boolean b = SelectedWindow.closeEvent(!SelectedWindow.isSaved()
+				||(SelectedWindow.getComponent() instanceof SyntaxTextArea
+						&&"\000".equals(((SyntaxTextArea)SelectedWindow.getComponent()).getFilePath())));
 		if (!b) return false;
+		
+		int loc = Windows.indexOf(SelectedWindow)-1;
+		
+		SelectedWindow.lostFocus(null);
+		
 		contentpane.remove(SelectedWindow.getComponent());
 		contentpane.remove(SelectedWindow.getTab());
 		contentpane.remove(SelectedWindow.getScrollPane());
 		SelectedWindow.getComponent().removeAll();
 		SelectedWindow.getScrollPane().removeAll();
 		Windows.remove(SelectedWindow);
+		SelectedWindow.delete();
 		SelectedWindow = null;
-		if (!Windows.isEmpty())
-			setSelectedWindow(Windows.get(0));
+		if (!Windows.isEmpty()) {
+			if (loc>-1)
+				setSelectedWindow(Windows.get(loc));
+			else
+				setSelectedWindow(Windows.get(0));
+		} else {
+			Folder.setVisible(true);
+			redraw();
+		}
 		redraw();
 		return true;
 	}
 	
 	public void redraw() {
-		if (ToolBar!=null) ToolBar.setBounds(0, 3, getWidth(), MenuBarSize());
+		if (ToolBar!=null) ToolBar.setBounds(0, 0, getWidth(), MenuBarSize());
 		int i = 0;
-    	int tabWidth = Math.min((getWidth() - 13)/(!Windows.isEmpty() ? Windows.size() : 1),
-    			(getWidth()-13)/8);
-    	
+		int x = isFolderOpen() ? Folder.getWidth() : -5;
+		int width = contentpane.getWidth();
+    	int tabWidth = Math.min((width - x)/(!Windows.isEmpty() ? Windows.size() : 1),
+    			325);
         for (Window win : Windows) {
-        	
-        	win.getScrollPane().setBounds( - 1, 
-        			MenuBarSize() + TabSize(), getWidth() - 13,
-        			getHeight() - MenuBarSize() - TabSize() - 45);
-        	win.getTab().setBounds(tabWidth * i , MenuBarSize(), tabWidth, TabSize());
+        	win.getScrollPane().setBounds(x, 
+        			MenuBarSize() + TabSize(), width - x,
+        			contentpane.getHeight() - MenuBarSize() - TabSize());
+        	win.getTab().setBounds((tabWidth * i) + x + 5 - Tab.padding,
+        			MenuBarSize(), tabWidth, TabSize());
+        	win.getTab().repaint();
+        	//win.getComponent().setBackground(MenuBG);
+        	win.resize();
         	i++;
         }
+        Folder.setBounds(0,MenuBarSize(),Folder.getWidth(), contentpane.getHeight()-MenuBarSize());
+
+        Folder.FilesPanel.setBounds(0,Folder.MenuBarSize(),Folder.getWidth(), Folder.getHeight());
+        Folder.tree.setBounds(0,0,Folder.getWidth(), Folder.getHeight()-13);
+        Folder.refresh();
+        
         repaint();
 	}
 
@@ -318,14 +510,14 @@ public class App extends JFrame {
 	 * @return whether the operation was successful
 	 */
 	public boolean megaSave(boolean ask) {
-		
+		if (getSelectedWindow()==null) return true;
 		if (SelectedWindow.getComponent() instanceof SyntaxTextArea &&
 				(SelectedWindow instanceof SyntaxTextArea)&&
 				(Windows.size()==1&&"\000".equals
-				(((SyntaxTextArea)SelectedWindow.getComponent()).FilePath)))
+				(((SyntaxTextArea)SelectedWindow.getComponent()).getFilePath())))
 		{
 			int result = JOptionPane.showConfirmDialog((Component) null,
-					"Do you want to save?","alert", JOptionPane.YES_NO_OPTION);
+					"Do you want to save?","Are you sure you want to save?", JOptionPane.YES_NO_OPTION);
 	    	if (result==JOptionPane.NO_OPTION)
 	    		return true;
 	    	if (result==JOptionPane.CANCEL_OPTION) {
@@ -334,6 +526,20 @@ public class App extends JFrame {
 	    	((SyntaxTextArea)SelectedWindow.getComponent()).openfile(false, true);
 		}
 		if (Windows.size()!=1) {
+			if (ask) {
+				int result = JOptionPane.showConfirmDialog((Component) null,
+						"Do you want to save?","Are you sure you want to save?",
+						JOptionPane.YES_NO_OPTION);
+		    	if (result==JOptionPane.NO_OPTION)
+		    		return true;
+		    	if (result==JOptionPane.CANCEL_OPTION) {
+		    		return false;
+		    	}
+		    	for (Window i : Windows)
+		    		if (i.getComponent() instanceof SyntaxTextArea&&
+		    				"\000".equals(((SyntaxTextArea)i.getComponent()).getFilePath()))
+		    	    	((SyntaxTextArea)i.getComponent()).openfile(false, true);
+			}
 			boolean res = true;
 			for (Window i: Windows) {
 				res = i.Save(ask);
@@ -354,6 +560,11 @@ public class App extends JFrame {
 		return true;
 	}
 	
+	
+	public void openFolderAndDialog() {
+		Folder.setFolderPath(Utils.openFolderDialog());
+	}
+	
 	/**
 	 * Pull up the close menu and runs System.exit(0); if user agrees.
 	 * @throws InterruptedException 
@@ -365,7 +576,8 @@ public class App extends JFrame {
 		
 		if (saved&&!isBusy()) System.exit(0);
 		int result = !isSaved() ? JOptionPane.showConfirmDialog(null,
-				"Do you want to exit?","alert", JOptionPane.YES_NO_OPTION) : JOptionPane.YES_OPTION;
+				"Do you want to exit?","Are you sure you want to exit?",
+				JOptionPane.YES_NO_OPTION) : JOptionPane.YES_OPTION;
     	if (result==JOptionPane.NO_OPTION||result==JOptionPane.CANCEL_OPTION)
     		return;
     	boolean save = !isSaved() ? megaSave(true) : true;
@@ -391,19 +603,66 @@ public class App extends JFrame {
 		for (Window i : Windows) 
 			i.refresh();
 		this.revalidate();
-		redraw();
+		//redraw();
 		isbusy = false;
 	}
 	
 	@Override 
 	public void paint(Graphics g) {
-		g.setColor(MenuBG);
-		g.fillRect(0, 0, getWidth(), getHeight()-13);
 		super.paint(g);
 	}
 	
-	protected boolean isbusy = false;
+	public void paintJB() {
+		//this.getGraphics().create(jb.getX(), jb.getY(), jb.getWidth(), jb.getHeight());
+	}
+
+	public boolean closeNotSelectedWindow(Window window) {
+		if (window==SelectedWindow) return closeSelectedWindow();
+		
+		boolean b = window.closeEvent(true);
+		if (!b) return false;
+		
+		contentpane.remove(window.getComponent());
+		contentpane.remove(window.getTab());
+		contentpane.remove(window.getScrollPane());
+		window.getComponent().removeAll();
+		window.getScrollPane().removeAll();
+		Windows.remove(window);
+		window = null;
+		redraw();
+		return true;
+	}
+
+	public void toggleFolder() {
+		Folder.setVisible(!Folder.isVisible());
+		redraw();
+	}
 	
-	public boolean isBusy() {return isbusy;}
+	public Window getSelectedWindow() {
+		return SelectedWindow;
+	}
+
+	public boolean isFolderOpen() {return Folder.isVisible();}
+	
+	public void restartApplication() throws URISyntaxException, IOException
+	{
+	  final String javaBin = System.getProperty("java.home") + File.separator + "bin" + File.separator + "java";
+	  final File currentJar = new File
+			  (Main.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+
+	  /* is it a jar file? */
+	  if(!currentJar.getName().endsWith(".jar"))
+	    return;
+
+	  /* Build command: java -jar application.jar */
+	  final ArrayList<String> command = new ArrayList<String>();
+	  command.add(javaBin);
+	  command.add("-jar");
+	  command.add(currentJar.getPath());
+
+	  final ProcessBuilder builder = new ProcessBuilder(command);
+	  builder.start();
+	  System.exit(0);
+	}
 	
 }

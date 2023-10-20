@@ -1,34 +1,30 @@
 package NNU.Editor.Windows;
 
-import java.awt.Dimension;
 import java.io.IOException;
 
 import javax.swing.JComponent;
 
 import NNU.Editor.App;
-import NNU.Editor.Menus.AboutMenu;
+import NNU.Editor.Menus.GitMenu;
 import NNU.Editor.Menus.Components.NGSScrollPane;
 import NNU.Editor.Menus.Components.Tab;
 import NNU.Editor.Utils.ValueNotFoundException;
 
-public class AboutWindow implements Window{
+public class GitWindow implements Window {
 
-	protected AboutMenu menu;
+	protected GitMenu menu;
 	protected NGSScrollPane sp;
 	protected Tab tab;
 	protected App app;
 	
-	public AboutWindow(App app) {
+	public GitWindow(App app) {
 		this.sp = new NGSScrollPane(app);
-		this.menu = new AboutMenu(this, app);
+		try {
+			this.menu = new GitMenu(this, app);
+		} catch (Exception e) {e.printStackTrace();}
 		sp.setViewportView(menu);
         this.tab = new Tab(app, this);
         this.app = app;
-        
-        sp.getHorizontalScrollBar().setPreferredSize(new Dimension(25,0));
-        sp.getHorizontalScrollBar().setLocation(sp.getWidth() - 25, 0);
-        sp.getVerticalScrollBar().setPreferredSize(new Dimension(25,100));
-        sp.getVerticalScrollBar().setLocation(sp.getWidth() - 25, 0);
         
         sp.setOpaque(true);
         
@@ -50,7 +46,7 @@ public class AboutWindow implements Window{
 
 	@Override
 	public String getTitle() {
-		return "About";
+		return "Git";
 	}
 
 	@Override

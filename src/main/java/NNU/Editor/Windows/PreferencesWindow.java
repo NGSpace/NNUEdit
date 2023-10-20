@@ -1,31 +1,32 @@
 package NNU.Editor.Windows;
 
+import static NNU.Editor.Utils.Utils.EDITORNAME;
+
 import java.awt.Dimension;
 import java.io.IOException;
 
 import javax.swing.JComponent;
-import javax.swing.JScrollPane;
-
 import NNU.Editor.App;
-import NNU.Editor.Tab;
 import NNU.Editor.Menus.PreferencesMenu;
+import NNU.Editor.Menus.Components.NGSScrollPane;
+import NNU.Editor.Menus.Components.Tab;
 import NNU.Editor.Utils.ValueNotFoundException;
 
-public class PrefrencesWindow implements Window {
+public class PreferencesWindow implements Window {
+	
+	public static Integer prefwin = 1;
 
 	protected PreferencesMenu menu;
-	protected JScrollPane sp;
+	protected NGSScrollPane sp;
 	protected Tab tab;
 	protected App app;
 	
-	public PrefrencesWindow(App app) {
-		this.menu = new PreferencesMenu(app.stng,app);
-		this.sp = new JScrollPane(menu.getContentPane());
-        this.tab = new Tab(app, this);
+	public PreferencesWindow(App app) {
         this.app = app;
-
-        menu.setVisible(false);
-        getComponent().setBackground(App.MenuBG);
+		this.sp = new NGSScrollPane(getApp());
+		this.menu = new PreferencesMenu(getApp().stng,getApp(),this);
+		sp.setViewportView(menu);
+        this.tab = new Tab(getApp(), this);
         
         sp.getHorizontalScrollBar().setPreferredSize(new Dimension(25,0));
         sp.getHorizontalScrollBar().setLocation(sp.getWidth() - 25, 0);
@@ -52,17 +53,17 @@ public class PrefrencesWindow implements Window {
 
 	@Override
 	public String getTitle() {
-		return "Settings";
+		return EDITORNAME + "'s Preferences";
 	}
 
 	@Override
-	public JScrollPane getScrollPane() {
+	public NGSScrollPane getScrollPane() {
 		return sp;
 	}
 
 	@Override
 	public JComponent getComponent() {
-		return (JComponent) menu.getContentPane();
+		return menu;
 	}
 
 	@Override
@@ -76,12 +77,19 @@ public class PrefrencesWindow implements Window {
 	}
 
 	@Override
-	public boolean closeEvent(String Reason) {
+	public boolean closeEvent(Object... Reason) {
 		return true;
 	}
 
 	@Override
-	public void refresh() throws ValueNotFoundException, IOException {
+	public void refresh() throws ValueNotFoundException, IOException {}
+
+	@Override
+	public void resize() {menu.resizeButton(sp);menu.refresh();}
+
+	@Override
+	public void delete() {
+		// TODO Auto-generated method stub
 		
 	}
 
