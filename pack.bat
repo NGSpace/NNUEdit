@@ -1,1 +1,0 @@
-"%ProgramFiles%\java\jdk-20\bin\jpackage" --input target/ --name NNUEdit1 --main-jar NNUEdit.jar --main-class NNU.Editor.Main --type app-image --java-options '-XX:-ShrinkHeapInSteps -XX:GCTimeRatio=19 -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=10'

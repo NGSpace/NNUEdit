@@ -14,6 +14,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ActionMap;
@@ -40,6 +41,8 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.Position;
+
+import NNU.Editor.AssetManagement.StringTable;
 
 /**
  * The <code>JFontChooser</code> class is a swing component 
@@ -89,7 +92,7 @@ public class JFontChooser extends JComponent
     private static final String[] DEFAULT_FONT_SIZE_STRINGS =
     {
         "8", "9", "10", "11", "12", "14", "16", "18", "20",
-        "22", "24", "26", "28", "36", "40", "48", "72",
+        "22", "24", "26", "28","30","32", "36", "40", "48", "72",
     };
 
     // instance variables
@@ -391,11 +394,6 @@ public class JFontChooser extends JComponent
         setSelectedFontSize(font.getSize());
     }
 
-    public String getVersionString()
-    {
-        return ("Version");
-    }
-
     /**
      *  Show font selection dialog.
      *  @param parent Dialog's Parent component.
@@ -637,7 +635,7 @@ public class JFontChooser extends JComponent
     {
         Frame frame = parent instanceof Frame ? (Frame) parent
             : (Frame) SwingUtilities.getAncestorOfClass(Frame.class, parent);
-        JDialog dialog = new JDialog(frame, ("Select Font"), true);
+        JDialog dialog = new JDialog(frame, StringTable.getString("fontdialog.title"), true);
 
         Action okAction = new DialogOKAction(dialog);
         Action cancelAction = new DialogCancelAction(dialog);
@@ -667,6 +665,9 @@ public class JFontChooser extends JComponent
         dialog.getContentPane().add(this, BorderLayout.CENTER);
         dialog.getContentPane().add(dialogEastPanel, BorderLayout.EAST);
         dialog.pack();
+
+        dialog.setSize(500, 700);
+        setSize(500, 600);
         dialog.setLocationRelativeTo(frame);
         return dialog;
     }
@@ -695,7 +696,7 @@ public class JFontChooser extends JComponent
             p.add(getFontFamilyTextField(), BorderLayout.NORTH);
             p.add(scrollPane, BorderLayout.CENTER);
 
-            JLabel label = new JLabel(("Font Name"));
+            JLabel label = new JLabel(StringTable.getString("fontdialog.fontname"));
             label.setHorizontalAlignment(JLabel.LEFT);
             label.setHorizontalTextPosition(JLabel.LEFT);
             label.setLabelFor(getFontFamilyTextField());
@@ -726,7 +727,7 @@ public class JFontChooser extends JComponent
             p.add(getFontStyleTextField(), BorderLayout.NORTH);
             p.add(scrollPane, BorderLayout.CENTER);
 
-            JLabel label = new JLabel(("Font Style"));
+            JLabel label = new JLabel(StringTable.getString("fontdialog.fontstyle"));
             label.setHorizontalAlignment(JLabel.LEFT);
             label.setHorizontalTextPosition(JLabel.LEFT);
             label.setLabelFor(getFontStyleTextField());
@@ -756,7 +757,7 @@ public class JFontChooser extends JComponent
             p.add(getFontSizeTextField(), BorderLayout.NORTH);
             p.add(scrollPane, BorderLayout.CENTER);
 
-            JLabel label = new JLabel(("Font Size"));
+            JLabel label = new JLabel(StringTable.getString("fontdialog.fontsize"));
             label.setHorizontalAlignment(JLabel.LEFT);
             label.setHorizontalTextPosition(JLabel.LEFT);
             label.setLabelFor(getFontSizeTextField());
@@ -773,7 +774,7 @@ public class JFontChooser extends JComponent
         if (samplePanel == null)
         {
             Border titledBorder = BorderFactory.createTitledBorder(
-                BorderFactory.createEtchedBorder(), ("Sample"));
+                BorderFactory.createEtchedBorder(), StringTable.getString("fontdialog.sample"));
             Border empty = BorderFactory.createEmptyBorder(5, 10, 10, 10);
             Border border = BorderFactory.createCompoundBorder(titledBorder, empty);
 
@@ -793,7 +794,7 @@ public class JFontChooser extends JComponent
             Border lowered = BorderFactory.createLoweredBevelBorder();
 
             sampleText = new JTextField(("AaBbYyZz"));
-            sampleText.setEditable(false);
+            sampleText.setEditable(true);
             sampleText.setBorder(lowered);
             sampleText.setPreferredSize(new Dimension(300, 100));
         }

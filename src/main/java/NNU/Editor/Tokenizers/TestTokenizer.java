@@ -1,4 +1,4 @@
-package NNU.Editor;
+package NNU.Editor.Tokenizers;
 
 import javax.swing.text.Segment;
 
@@ -10,9 +10,7 @@ import org.fife.ui.rsyntaxtextarea.TokenTypes;
 
 public class TestTokenizer extends AbstractTokenMaker {
 
-	public TestTokenizer() {
-		// TODO Auto-generated constructor stub
-	}
+	public TestTokenizer() {}
 
 	/**
 	 * Returns a list of tokens representing the given text.
@@ -247,7 +245,7 @@ public class TestTokenizer extends AbstractTokenMaker {
 		
 		
 		tokenMap.put("printf", TokenTypes.FUNCTION);
-		tokenMap.put("scanf",  TokenTypes.FUNCTION);
+		tokenMap.put("scanf",  40);//TokenTypes.FUNCTION);
 		tokenMap.put("fopen",  TokenTypes.FUNCTION);
 		   
 		return tokenMap;

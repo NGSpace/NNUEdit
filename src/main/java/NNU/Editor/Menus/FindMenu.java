@@ -2,69 +2,67 @@ package NNU.Editor.Menus;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.KeyboardFocusManager;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.Collections;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Highlighter;
 
-import NNU.Editor.SyntaxTextArea;
+import NNU.Editor.EditorTextArea;
+import NNU.Editor.AssetManagement.StringTable;
+import NNU.Editor.Utils.UserMessager;
 
-public class FindMenu extends JPanel {
+public class FindMenu extends JPanel implements DocumentListener {
 	
 	private static final long serialVersionUID = -3066669034146785706L;
-	protected SyntaxTextArea txtArea;
+	protected EditorTextArea txtArea;
 	protected static boolean CaseSensitivity = false;
-	protected JTextField txtTest;
+	protected JTextField txtFind;
 	protected String str = "";
 	
 	int off = 0;
 	private JTextField ReplaceTxt;
 
-	public FindMenu(SyntaxTextArea txtArea) {
+	public FindMenu(EditorTextArea txtArea) {
 		super();
 		this.txtArea = txtArea;
 		setLayout(null);
 		setBounds(0,0,551,92);
 		
-		txtTest = new JTextField();
-		txtTest.setText("");
-		txtTest.setFont(new Font("Courier New", Font.BOLD, 18));
-		txtTest.setBounds(10, 11, 269, 30);
-		add(txtTest);
-		txtTest.setColumns(10);
+		txtFind = new JTextField();
+		txtFind.setText("");
+		txtFind.setFont(new Font("Courier New", Font.BOLD, 18));
+		txtFind.setBounds(10, 11, 269, 30);
+		txtFind.setColumns(10);
+		txtFind.getDocument().addDocumentListener(this);
+		add(txtFind);
 		
-		JButton btnNewButton = new JButton("Find Next");
+		JButton btnNewButton = new JButton(StringTable.getString("find.findnext"));
 		btnNewButton.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				FindNext(txtTest.getText());
+				FindNext(txtFind.getText());
 			}
 		});
 		btnNewButton.setBounds(289, 11, 99, 30);
 		btnNewButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		add(btnNewButton);
-		
-		JButton btnFindAll = new JButton("Find All");
-		btnFindAll.setBounds(398, 11, 99, 30);
-		btnFindAll.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseClicked(MouseEvent e) {
-				FindAll(txtTest.getText());
-			}
-		});
-		btnFindAll.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		add(btnFindAll);
 		
 		ReplaceTxt = new JTextField();
 		ReplaceTxt.setText("");
@@ -73,11 +71,13 @@ public class FindMenu extends JPanel {
 		ReplaceTxt.setBounds(10, 52, 269, 30);
 		add(ReplaceTxt);
 		
-		JButton btnReplaceNext = new JButton("Replace Next");
+		
+		/* Replace Next*/
+		JButton btnReplaceNext = new JButton(StringTable.getString("find.replacenext"));
 		btnReplaceNext.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				ReplaceNext(txtTest.getText(),ReplaceTxt.getText());
+				ReplaceNext(txtFind.getText(),ReplaceTxt.getText());
 			}
 		});
 		btnReplaceNext.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -85,12 +85,11 @@ public class FindMenu extends JPanel {
 		add(btnReplaceNext);
 
 
-		
-		/* Change case sensitivity */
-		JButton btnReplaceAll = new JButton("Replace All");
+		/* Replace All */
+		JButton btnReplaceAll = new JButton(StringTable.getString("find.replaceall"));
 		btnReplaceAll.addMouseListener(new MouseAdapter() {
 			@Override public void mouseClicked(MouseEvent e) {
-				txtArea.setText(txtArea.getText().replace(txtTest.getText(), ReplaceTxt.getText()));
+				txtArea.setText(txtArea.getText().replace(txtFind.getText(), ReplaceTxt.getText()));
 			}
 		});
 		btnReplaceAll.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -102,8 +101,8 @@ public class FindMenu extends JPanel {
 		JCheckBox chckbxNewCheckBox = new JCheckBox("Aa");
 		chckbxNewCheckBox.addMouseListener(new MouseAdapter() {
 			@Override public void mouseClicked(MouseEvent e) {CaseSensitivity = !CaseSensitivity;}
-		});
-		chckbxNewCheckBox.setToolTipText("Case Sensitivity");
+		});//UserMessager.input("", "input.newfile");
+		chckbxNewCheckBox.setToolTipText(StringTable.getString("find.case"));
 		chckbxNewCheckBox.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		chckbxNewCheckBox.setBounds(500, 52, 38, 30);
 		chckbxNewCheckBox.setSelected(CaseSensitivity);
@@ -117,12 +116,56 @@ public class FindMenu extends JPanel {
 			public void mouseClicked(MouseEvent e) {
 				txtArea.remove(txtArea.fm);
 				txtArea.repaint();
+				txtArea.requestFocus();
 			}
 		});
 		XButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		XButton.setBounds(507, 11, 30, 30);
 		add(XButton);
 		this.setVisible(true);
+
+        setFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS,
+        		Collections.emptySet());
+		this.setFocusTraversalKeysEnabled(false);
+
+		txtFind.addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyPressed(KeyEvent event) {
+				if (event.getKeyChar() == KeyEvent.VK_TAB) {
+					toggle();
+				} else if (event.getKeyChar() == KeyEvent.VK_ENTER) {
+					enterKey();
+				}
+			}
+	    });
+		ReplaceTxt.addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyPressed(KeyEvent event) {
+				if (event.getKeyChar() == KeyEvent.VK_TAB) {
+					toggle();
+				} else if (event.getKeyChar() == KeyEvent.VK_ENTER) {
+					enterKey();
+				}
+			}
+	    });
+		
+        this.requestFocus();
+	}
+	
+	public Component getFocusedComponent() {
+		return KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
+	}
+
+	public void enterKey() {
+		if (getFocusedComponent()==txtFind) {
+			FindNext(txtFind.getText());
+		} else {ReplaceNext(txtFind.getText(), ReplaceTxt.getText());}
+	}
+	
+	public void toggle() {
+		if (getFocusedComponent()==txtFind) {
+			ReplaceTxt.requestFocus();
+		} else {txtFind.requestFocus();}
 	}
 	
 	public void FindAll(String searchReq) {
@@ -134,6 +177,7 @@ public class FindMenu extends JPanel {
     	String search = CaseSensitivity ? searchReq : searchReq.toLowerCase();
 
 		txtArea.getHighlighter().removeAllHighlights();
+		if ("".equals(search)) return;
 		
 		int offset = indexOf(txt,search);
 		int length = search.length();
@@ -141,9 +185,6 @@ public class FindMenu extends JPanel {
 		while (offset != -1) {
 		    try {
 		    	txtArea.getHighlighter().addHighlight(offset, offset + length, painter);
-		    	//txtArea.select
-		    	//txtArea.select(offset, offset + length);
-		    	txtArea.setCaretPosition(offset + length);
 				offset = indexOf(txt,search, offset+1);
 			} catch (BadLocationException e1) {e1.printStackTrace();}
 		}
@@ -164,8 +205,7 @@ public class FindMenu extends JPanel {
 			off = 0;
 			off = indexOf(txt,search,off);
 			if (off==-1) {
-				JOptionPane.showMessageDialog(null, "Could not find " + searchReq, 
-						"Could not find", JOptionPane.WARNING_MESSAGE);
+				UserMessager.showErrorDialogTB("editor.err.cantfind.title","editor.err.cantfind",searchReq);
 				return;
 			}
 		}
@@ -194,8 +234,7 @@ public class FindMenu extends JPanel {
 			off = 0;
 			off = indexOf(txt,search,off);
 			if (off==-1) {
-				JOptionPane.showMessageDialog(null, "Could not find " + searchReq, 
-						"Could not find", JOptionPane.WARNING_MESSAGE);
+				UserMessager.showErrorDialogTB("editor.err.cantfind.title","editor.err.cantfind",searchReq);
 				return;
 			}
 		}
@@ -216,6 +255,12 @@ public class FindMenu extends JPanel {
 	protected int indexOf(String txt, String search) {
 		return txt.indexOf(search);
 	}
+
+	@Override public void insertUpdate(DocumentEvent e)  {FindAll(txtFind.getText());}
+
+	@Override public void removeUpdate(DocumentEvent e)  {FindAll(txtFind.getText());}
+
+	@Override public void changedUpdate(DocumentEvent e) {FindAll(txtFind.getText());}
 }
 
 class XButton extends JButton {

@@ -1,12 +1,8 @@
 package NNU.Editor.Utils;
 
-import static java.lang.System.getProperty;
 import static java.lang.System.out;
 
 import java.awt.AlphaComposite;
-import java.awt.BasicStroke;
-import java.awt.Component;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
@@ -19,25 +15,31 @@ import java.net.URLDecoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Scanner;
 
+import javax.imageio.ImageIO;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
-import javax.swing.border.EmptyBorder;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.widgets.DirectoryDialog;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Shell;
 
 import NNU.Editor.App;
+import NNU.Editor.Main;
+import NNU.Editor.AssetManagement.StringTable;
+import net.sf.image4j.codec.ico.ICODecoder;
 
 public class Utils {
 	/**
 	 * the name of the editor bcz maybe I will want to change it in the future (again).
 	 */
-	public static final String EDITORNAME = "NNUEdit";
+	public static final String EFFECTIVE_EDITORNAME = "NNUEdit";//StringTable.getString("editor.name");
+	public static String EDITORNAME = StringTable.getString("editor.name");
 	
 	private Utils() {}
 
@@ -59,9 +61,9 @@ public class Utils {
 	 */
 	public static String openFileDialog(boolean save) {
 		String res = null;
-		if (getProperty("os.name").contains("Windows")) {
-			out.println("Windows machine detected. opening windows file dialog.");
-	        Display display = new Display ();
+		if (!"universal".equals(Main.SYSTEM)) {
+			//out.println("Windows machine detected. opening windows file dialog.");
+			Display display = new Display ();
 	        Shell shell = new Shell (display);
 	        // Don't show the shell.
 	        // shell.open();
@@ -72,14 +74,14 @@ public class Utils {
 	        shell.close();
 	        display.close();
 		} else {
-			out.println("Not windows machine detected. opening default file dialog.");
+			out.println("Universal system detected! Using universal file chooser");
 	        JFileChooser chooser = new JFileChooser();
 	        chooser.setDialogTitle("Specify a file to " + (save ? "Save" : "Open"));  
 	        int returnVal = save ? chooser.showSaveDialog(null) : chooser.showOpenDialog(null);
 	        if (returnVal!=0) return null;
 			try {
 				res = chooser.getSelectedFile().getCanonicalPath();
-			} catch (IOException e) {e.printStackTrace();}
+			} catch (IOException e1) {e1.printStackTrace();}
 		}
 		return res;
 	}
@@ -90,29 +92,26 @@ public class Utils {
 	 * @return the selected file (returns null otherwise)
 	 */
 	public static String openFolderDialog() {
-		String res = "\000";
-		/*if (false) {
-			out.println("Windows machine detected. opening swt folder dialog.");
-	        Display display = new Display ();
-	        Shell shell = new Shell (display);
-	        // Don't show the shell.
-	        // shell.open();
-	        DirectoryDialog dialog = new DirectoryDialog(shell);
-	        
-	        res = dialog.open();
-	        shell.close();
-	        display.close();
-		} else {*/
-		out.println("Opening folder dialog.");
-        JFileChooser chooser = new JFileChooser();
-        chooser.setDialogTitle("Specify a folder to open");  
-        chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        int returnVal = chooser.showOpenDialog(null);
-        if (returnVal!=0) return null;
-		try {
-			res = chooser.getSelectedFile().getCanonicalPath();
-		} catch (IOException e) {e.printStackTrace();}
-		//}
+		String res = "";
+		if (!"universal".equals(Main.SYSTEM)) {
+		    Display display = new Display();
+		    Shell shell = new Shell(display);
+		    //shell.open();
+		    DirectoryDialog dialog = new DirectoryDialog(shell);
+		    dialog.setFilterPath("c:\\"); // Windows specific
+		    res = dialog.open();
+		    display.dispose();
+		} else {
+			out.println("Opening folder dialog.");
+	        JFileChooser chooser = new JFileChooser();
+	        chooser.setDialogTitle("Specify a folder to open");  
+	        chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+	        int returnVal = chooser.showOpenDialog(null);
+	        if (returnVal!=0) return null;
+			try {
+				res = chooser.getSelectedFile().getCanonicalPath();
+			} catch (IOException e) {e.printStackTrace();}
+		}
 		return res;
 	}
 	
@@ -120,6 +119,11 @@ public class Utils {
 		if (res != null&&!"/".equals(res.trim()) && !res.trim().isEmpty())
 			return res;
 		return null;
+	}
+	
+	public static String getEncoding() {
+		String s = null;//System.getProperty("sun.jnu.encoding");
+		return s==null?"Cp852":s;
 	}
 	
 	/**
@@ -130,14 +134,8 @@ public class Utils {
 	public static String read(String path) {
 		try {
 			File myObj = new File(path);
-			//InputStream is = new FileInputStream(myObj);
-			Scanner scan = new Scanner(myObj, "Cp852");
+			Scanner scan = new Scanner(myObj, getEncoding());
 			StringBuilder strb = new StringBuilder();
-			/*int bit = is.read();
-			while ((bit = is.read())!=-1) {
-				strb.append((char)bit);
-			}
-			is.close();*/
 			while (scan.hasNextLine()) {
 				strb.append(scan.nextLine() + '\n');
 			}
@@ -147,7 +145,7 @@ public class Utils {
 			System.out.println("An error occurred.");
 			e.printStackTrace();
 		}
-		return "\000";
+		return "";
 	}
 
 
@@ -188,32 +186,6 @@ public class Utils {
 		}
 	}
 	
-	/**
-	 * Converts a given Image into a BufferedImage
-	 *
-	 * @param img The Image to be converted
-	 * @return The converted BufferedImage
-	 */
-	public static BufferedImage toBufferedImage(Image img)
-	{
-	    if (img instanceof BufferedImage)
-	    {
-	        return (BufferedImage) img;
-	    }
-
-	    // Create a buffered image with transparency
-	    BufferedImage bimage = new BufferedImage(img.getWidth(null), img.getHeight(null),
-	    		BufferedImage.TYPE_INT_ARGB);
-
-	    // Draw the image on to the buffered image
-	    Graphics2D bGr = bimage.createGraphics();
-	    bGr.drawImage(img, 0, 0, null);
-	    bGr.dispose();
-
-	    // Return the buffered image
-	    return bimage;
-	}
-	
 	public static Icon ResizeIcon(Icon c, int Width, int Height) {
 		Image newimg = Utils.iconToImage(c).getScaledInstance(Width, Height,
 			Image.SCALE_SMOOTH); // scale it the smooth way
@@ -221,21 +193,6 @@ public class Utils {
 	}
 	public static Image ResizeImage(Image c, int Width, int Height) {
 		return c.getScaledInstance(Width, Height, Image.SCALE_SMOOTH);
-	}
-	public static class CustomBorder extends EmptyBorder {
-		
-		private static final long serialVersionUID = -2759389573930313650L;
-	
-		public CustomBorder(int top, int left, int bottom, int right) {
-			super(top, left, bottom, right);
-		}
-	
-		@Override
-		public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
-			((Graphics2D)g).setStroke(new BasicStroke(3));
-				g.drawLine(0, height, width, height);
-		}
-		
 	}
 	
 	public static ImageIcon ReadImageIcon(String name) {
@@ -257,8 +214,7 @@ public class Utils {
 
 	public static void delete(Path path) throws IOException {
 		if (path.toFile().isDirectory()) {
-	        Files
-	            .walk(path) // Traverse the file tree in depth-first order
+	        Files.walk(path) // Traverse the file tree in depth-first order
 	            .sorted(Comparator.reverseOrder())
 	            .forEach(e -> {
 	                try {
@@ -269,8 +225,56 @@ public class Utils {
 	                }
 	            });
 		} else {
-			//if (!path.toFile().delete())return;
 			Files.delete(path);
+		}
+	}
+	
+	public static int parseInt(String str) {
+		try {
+			return Integer.parseInt(str);
+		} catch (Exception e) {
+			return 0;
+		}
+	}
+	public static int parseInt(char c) {
+		return parseInt(String.valueOf(c));
+	}
+	static HashMap<String, String> filetypes = new HashMap<String, String>();
+	
+	static {
+        String[] imagetypes = {"png","jpg", "jpeg","bmp","wbmp","gif","tiff","tif","webp","ico"};
+		for (String fex : imagetypes)
+			filetypes.put(fex, "img");
+		filetypes.put("properties", "prop");
+		filetypes.put("mp3","audio");
+		filetypes.put("mp4","video");
+	}
+
+	public static String getFileType(String path) {
+		if (path==null) return "";
+		String res = filetypes.get(getFileExt(path).toLowerCase().trim());
+		if (res==null)
+			return "";
+		return res;
+	}
+
+	public static String getFileExt(String path) {
+		if (path==null) return "";
+        String[] f = path.replace('\\', '/').split("/");
+        String[] fi = f[f.length-1].split("[.]");
+		return fi[fi.length-1];
+	}
+
+	public static String valueOf(Object val) {
+		return val==null?"":val.toString();
+	}
+	
+	public static BufferedImage readImageFromFile(File f) throws Exception {
+		switch (getFileExt(f.getAbsolutePath()).toLowerCase()) {
+			case "ico":
+				return ICODecoder.read(f).get(0);
+			default:
+				return ImageIO.read(f);
 		}
 	}
 }

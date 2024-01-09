@@ -2,7 +2,6 @@ package NNU.Editor.Menus;
 
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Graphics;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
@@ -11,10 +10,9 @@ import javax.swing.JPanel;
 import javax.swing.JTextPane;
 
 import NNU.Editor.App;
-import NNU.Editor.Menus.Components.FolderButton;
-import NNU.Editor.Windows.Window;
+import NNU.Editor.Windows.Interfaces.Window;
 
-public class GitMenu extends JPanel implements FolderButton {
+public class GitMenu extends JPanel {
 
 	private static final long serialVersionUID = 6893937793741839803L;
 	public final Window window;
@@ -50,28 +48,6 @@ public class GitMenu extends JPanel implements FolderButton {
         this.setBackground(new Color(10,10,12));
         this.setForeground(Color.LIGHT_GRAY);
         
-        initjl(this,window.getScrollPane());
     	//resizeButton(window.getScrollPane());
-	}
-
-	@Override
-	public void paintComponent(Graphics g) {
-		super.paintComponent(g);
-		this.paintFB(g, window.getScrollPane());
-	}
-	public final JButton jl = new JButton() {
-		private static final long serialVersionUID = 3394518635747541418L;
-
-		@Override public void paint(Graphics g) {}
-	};
-	
-	@Override
-	public JButton getFolderButton() {
-		return jl;
-	}
-
-	@Override
-	public App getApp() {
-		return app;
 	}
 }

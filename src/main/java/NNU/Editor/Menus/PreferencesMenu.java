@@ -1,6 +1,7 @@
 package NNU.Editor.Menus;
 
-import java.awt.BasicStroke;
+import static NNU.Editor.AssetManagement.StringTable.getString;
+
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -21,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Vector;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListCellRenderer;
@@ -33,8 +35,6 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
-import javax.swing.plaf.basic.BasicArrowButton;
-import javax.swing.plaf.basic.BasicComboBoxUI;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.swing.text.JTextComponent;
@@ -43,26 +43,23 @@ import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 
 import NNU.Editor.App;
 import NNU.Editor.Settings;
-import NNU.Editor.Menus.Components.FolderButton;
-import NNU.Editor.Utils.ValueNotFoundException;
-import NNU.Editor.Windows.Window;
-
-public class PreferencesMenu extends JPanel implements FolderButton {
-	
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 5027581198213070489L;
+import NNU.Editor.Menus.Components.SmartJLabel;
+import NNU.Editor.Windows.Interfaces.Window;
+public class PreferencesMenu extends JPanel {
 	
 	public static final String FT = "Tahoma";
 	public static final int TEXT_SPACING = 15;
-	public static final int VARIABLE_SPACING = 60;
+	public static final int VARIABLE_SPACING = 30;
+	public static Font f = new Font(FT, Font.BOLD, 24);
+	
+	private static final long serialVersionUID = 5027581198213070489L;
+	//public Jthis this = this;
 	public final Settings stng;
 	public App app;
 	public Window window;
 	public int Y = 0;
 	
-	@Override public Font getFont() {return new Font(FT, Font.BOLD, 24);}
+	@Override public Font getFont() {return f;}
 	
 	/**
 	 * Creates and opens the prefrences menu
@@ -73,58 +70,136 @@ public class PreferencesMenu extends JPanel implements FolderButton {
 		this.stng = stng;
 		this.app = app;
 		this.window = window;
-		this.setSize(new Dimension(683, 542));
 		setOpaque(true);
 		setBackground(new Color(10,10,12));
 		setForeground(Color.white.darker());
-
-        setBorder(new EmptyBorder(0,getBuffer(),0,0));
+		
+        setBorder(new EmptyBorder(0,App.getBuffer(),0,0));
 		setLayout(null);
 		
-		initjl(this,window.getScrollPane());
+		//setMinimumSize(new Dimension(1000, 1005));
 		
 		refresh();
 		app.repaint();
 	}
 	
+	@Override
+    public void setBounds(int x, int y, int width, int height) {
+		super.setBounds(x, y, width, height);
+    }
+    
+	@Override
+	public void paint(Graphics g) {
+		super.paint(g);
+		window.getScrollPane().paintSeperators((Graphics2D)g);
+	}
+	
+	AtomicBoolean b = new AtomicBoolean(false);
+	
 	public void refresh() {
 		try {
+			
+			if (b.get()==true) return;
 			stng.refresh();
+			removeAll();
+			
+			this.removeAll();
+			this.setLayout(null);
+			//int x = app.isFolderOpen() ? app.Folder.getWidth() : 5;//app.contentpane.getWidth() - x - 100
+			
+			/* Yay pre-set values! (╥﹏╥) (I gave up) */
+			this.setPreferredSize(new Dimension(900,Y));
+			
+			this.setOpaque(true);
+			initComponents();
+			
+			revalidate();
+			
+			app.repaint();
+			b.set(false);
+			
+			
 		} catch (Exception e) {e.printStackTrace();}
-		removeAll();
+	}
+	
+	/**
+	 * Here you can see all my failures and my inability to add basic features like:
+	 *   <li>Resizing the folder view.
+	 *   <li>Move the numbers from the right to the left.
+	 *   <li>Auto pausing the shell when running projects.<br><br>
+	 * 
+	 * This is all because of my inability to think into the future.<br>
+	 * @throws Exception
+	 */
+	public void initComponents() throws Exception {
 		Y = 40;
-		try {
-			InitFontSettings();
-			InitSyntaxSettings();
-			AddBooleanValue("Text Anti Alias","textantialias");
-			AddBooleanValue("Numbered Lines (May cause lag)","numberlines");
-			//AddBooleanValue("Auto-Pause Shell after run","shellpause");
-			AddIntValue("Tab Font Size", "tabfontsize");
-		} catch (Exception e) {e.printStackTrace();}
-		add(jl);
-		revalidate();
-		app.repaint();
+		
+		
+		AddHeader("options.header.appearence"); /* General Appearance */
+		
+		AddFontValue("options.tab.font", "tab.font");
+		AddBooleanValue("options.antialias","editor.antialias");
+		
+		/**
+		 * Can still be enabled in the file (Please don't, you can barely see the difference :P)
+		 * and there is litterally 0 visible difference...
+		 */
+		//AddBooleanValue("options.powerantialias","editor.powerantialias");
+		AddBooleanValue("options.preview", "folder.imgpreview");
+		
+		AddHeader("options.header.editor.appearence",7,false); /* Text Editor Appearance */
+		
+		AddFontValue("options.editor.font", "editor.font");
+		AddBooleanValue("options.editor.numbers","editor.numberlines");
+		AddSyntaxValue("options.editor.language","editor.syntax");
+		
+		AddHeader("options.header.other.editor.appearence",7,false); /* Other Editors Appearance */
+
+		AddFontValue("options.prop.font", "editor.prop.font");
+		AddIntValue("options.prop.width", "editor.prop.tablewidth");
+		
+		
+
+		AddHeader("options.header.system"); /* System */
+
+		AddBooleanValue("options.system.startup", "system.checkversion");
+		//AddBooleanValue("options.system.debug", "system.debugbutton"); /* Nu CTRL + T for u */
+	}
+	
+	public void AddHeader(String name) {
+		AddHeader(name,10,true);
+	}
+	
+	public void AddHeader(String name, int size, boolean underline) {
+		Y+= 10 * (size/10f);
+		SmartJLabel jlb = new SmartJLabel(stng);
+		jlb.setFont(new Font(FT, Font.BOLD, (int)(34f * (size/10f))));
+		jlb.setText(getString(name));
+		jlb.setSize(getWidth(), 100);
+		jlb.setLocation(0,Y);
+		jlb.setForeground(getForeground().brighter());
+		jlb.setUnderlineEnabled(underline);
+		this.add(jlb);
+		Y+=70 * (size/10f) + VARIABLE_SPACING * (size/10f);
 	}
 	
 	public void AddBooleanValue(String name, String key) {
-		try {
-			AddBooleanCheckbox(name,key, e -> {
-				boolean val = ((JCheckBox)e.getSource()).isSelected();
-				stng.set(key, val);
-				refresh();
-			});
-		} catch (ValueNotFoundException e) {e.printStackTrace();}
+		AddBooleanCheckbox(name,key, e -> {
+			boolean val = ((JCheckBox)e.getSource()).isSelected();
+			stng.set(key, val);
+			refresh();
+		});
 	}
 	
-	public void AddBooleanCheckbox(String name, String key, ItemListener listener) throws ValueNotFoundException {
-		JLabel jlb = new JLabel();
+	public void AddBooleanCheckbox(String name, String key, ItemListener listener) {
+		SmartJLabel jlb = new SmartJLabel(stng);
 		jlb.setFont(getFont());
 		jlb.setHorizontalAlignment(SwingConstants.RIGHT);
-		jlb.setText(name);
+		jlb.setText(getString(name));
 		jlb.setSize(getWidth()/2 - TEXT_SPACING, 100);
 		jlb.setLocation(0,Y);
 		jlb.setForeground(getForeground());
-		add(jlb);
+		this.add(jlb);
         JCheckBox jls = new JCheckBox();
         jls.setBackground(new Color(10,10,12));
         //jls.setForeground(app.MenuFG);
@@ -134,45 +209,47 @@ public class PreferencesMenu extends JPanel implements FolderButton {
         jls.setOpaque(true);
 		jls.setSize(getWidth()/2 - TEXT_SPACING, 41);
 		jls.setLocation(getWidth()/2 + TEXT_SPACING * 2,Y + 32);
+		jls.setText(jls.isSelected()?getString("options.enabled"):getString("options.disabled"));
+		jls.setFont(getFont());
+		jls.setVerticalTextPosition(SwingConstants.CENTER);
+		jls.setVerticalAlignment(SwingConstants.TOP);
 		Y+=60+VARIABLE_SPACING;
-		add(jls);
+		this.add(jls);
 	}
 	
 	public void AddIntValue(String name, String key) {
-		try {
-			AddIntField(name,key, new FocusAdapter() {
-				
-				public void Click(FocusEvent e) {
-					Document d = ((JTextComponent)e.getComponent()).getDocument();
-					try {
-						int value = Integer.parseInt(d.getText(0, d.getLength()));
-						stng.set(key, value);
-						refresh();
-					} catch (NumberFormatException | BadLocationException e1) {e1.printStackTrace();}
-				}
-
-				@Override
-				public void focusLost(FocusEvent e) {
-					Click(e);
-				}
-			});
-		} catch (ValueNotFoundException e) {e.printStackTrace();}
+		AddIntField(name,key, new FocusAdapter() {
+			public void Click(FocusEvent e) {
+				Document d = ((JTextComponent)e.getComponent()).getDocument();
+				try {
+					int value = Integer.parseInt
+							(d.getText(0, d.getLength()).replaceAll("[^\\d]*", ""));
+					stng.set(key, value);
+					refresh();
+					//app.redraw();
+				} catch (NumberFormatException | BadLocationException e1) {e1.printStackTrace();}
+			}
+			@Override
+			public void focusLost(FocusEvent e) {
+				Click(e);
+			}
+		});
 	}
 	
-	public void AddIntField(String name, String key, FocusListener listener) throws ValueNotFoundException {
-		JLabel jlb = new JLabel();
+	public void AddIntField(String name, String key, FocusListener listener) {
+		SmartJLabel jlb = new SmartJLabel(stng);
 		jlb.setFont(getFont());
 		jlb.setHorizontalAlignment(SwingConstants.RIGHT);
-		jlb.setText(name);
+		jlb.setText(getString(name));
 		jlb.setSize(getWidth()/2 - TEXT_SPACING, 100);
 		jlb.setLocation(0,Y);
 		jlb.setForeground(getForeground());
-		add(jlb);
+		this.add(jlb);
 		JFormattedTextField jls = new JFormattedTextField(NumberFormat.getNumberInstance());
         jls.setBackground(new Color(10,10,12));
-        //jls.setForeground(app.MenuFG);
+        
         jls.setValue(stng.getInt(key));
-		//SwingUtils.scaleCheckBoxIcon(jls);
+        
         jls.addFocusListener(listener);
         jls.setOpaque(true);
         jls.addKeyListener(new KeyAdapter() {
@@ -185,21 +262,21 @@ public class PreferencesMenu extends JPanel implements FolderButton {
 		jls.setSize(234, 41);
 		jls.setLocation(getWidth()/2 + TEXT_SPACING * 2,Y + 32);
 		Y+=60+VARIABLE_SPACING;
-		add(jls);
+		this.add(jls);
 	}
 	
 	
 	// FontSettings
 	
-	protected void InitFontSettings() {
+	public void AddFontValue(String name, String key) {
 		
-		JLabel jlb = new JLabel();
+		SmartJLabel jlb = new SmartJLabel(stng);
 		
-		JLabel lblfont = new JLabel();
-		lblfont.setSize(252, 41);
-		lblfont.setLocation(getWidth()/2- lblfont.getWidth()/2, 79);
+		JLabel lblfont = new SmartJLabel(stng);
+		lblfont.setSize(252, 100);
+		lblfont.setLocation(getWidth()/2- lblfont.getWidth()/2, Y+TEXT_SPACING);
 		
-		Font f = app.getFont();
+		Font f = stng.getFont(key);
         String  strStyle;
 
         if (f.isBold()) {
@@ -214,30 +291,25 @@ public class PreferencesMenu extends JPanel implements FolderButton {
 		
 		jlb.setFont(new Font(FT, Font.BOLD, 26));
 		jlb.setHorizontalAlignment(SwingConstants.RIGHT);
-		jlb.setText("Choose Font:");
+		jlb.setText(getString(name));
 		jlb.setForeground(getForeground());
 		
-		jlb.setSize(180, 100);
-		jlb.setLocation(getWidth()/2-jlb.getWidth()/2-lblfont.getWidth() - (TEXT_SPACING/2-10),50);
+		jlb.setSize(lblfont.getX() - (TEXT_SPACING/2-10), 100);
+		jlb.setLocation(0,Y+TEXT_SPACING);
 		
-		JButton btnNewButton = new JButton("Browse");
-		btnNewButton.setSize(134, 41);
-		btnNewButton.setLocation(getWidth()/2 + lblfont.getWidth()/2 + TEXT_SPACING, 79);
+		JButton btnNewButton = new JButton(getString("options.browse"));
+		btnNewButton.setSize(104, 55);
+		btnNewButton.setLocation(getWidth()/2 + lblfont.getWidth()/2 + TEXT_SPACING, Y+TEXT_SPACING + 20);
 		btnNewButton.setForeground(getForeground());
-		
-		add(jlb);
-		add(lblfont);
 		
 		btnNewButton.addMouseListener(new MouseAdapter() {
 			@Override public void mouseClicked(MouseEvent e) {
 					try {
 					JFontChooser jfc = new JFontChooser();
-					jfc.setSelectedFont(app.getFont());
+					jfc.setSelectedFont(f);
 					jfc.showDialog(app);
 					Font f = jfc.getSelectedFont();
-					stng.set("fontsize", f.getSize());
-					stng.set("fontfamily", f.getFamily());
-					stng.set("fontstyle", f.getStyle());
+					stng.set(key, f);
 					refresh();
 				} catch (Exception e1) {e1.printStackTrace();}
 			}
@@ -245,7 +317,10 @@ public class PreferencesMenu extends JPanel implements FolderButton {
 		btnNewButton.setFont(new Font(FT, Font.BOLD, 14));
 		btnNewButton.setBackground(new Color(10,10,12));
 		btnNewButton.setOpaque(true);
-		add(btnNewButton);
+		
+		this.add(jlb);
+		this.add(lblfont);
+		this.add(btnNewButton);
 		Y+=60+VARIABLE_SPACING;
 	}
 	
@@ -253,49 +328,53 @@ public class PreferencesMenu extends JPanel implements FolderButton {
 	
 	// SyntaxSettings
 	
-	protected Map<String, String> values = new HashMap<String,String>();
+	protected static Map<String, String> values = new HashMap<String,String>();
+	static Vector<String> items = new Vector<>();
+	static {
+		try {
+			Field[] fields = SyntaxConstants.class.getDeclaredFields();
+			for(Field f : fields){
+				Object objectValue = "";
+				Object value;
+				value = f.get(objectValue);
+				values.put(f.getName().replace("SYNTAX_STYLE_", "").toLowerCase().replace('_', ' '),
+					((String) value).replace("text/", ""));
+			}
 	
-	protected void InitSyntaxSettings() throws Exception {
-		JLabel jlb = new JLabel();
+	        for (Map.Entry<String,String> entry : values.entrySet()) {
+	            items.add(entry.getKey());
+				//  System.out.println(entry.getKey() + "    " + entry.getValue());
+	        }
+		} catch (IllegalArgumentException | IllegalAccessException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	protected void AddSyntaxValue(String name, String key) throws Exception {
+		SmartJLabel jlb = new SmartJLabel(stng);
 		jlb.setFont(getFont());
 		jlb.setHorizontalAlignment(SwingConstants.CENTER);
-		jlb.setText("Choose Langauge:");
+		jlb.setText(getString(name));
 		jlb.setForeground(getForeground());
 		jlb.setSize(234, 100);
 		jlb.setLocation(getWidth()/2 - jlb.getWidth() - TEXT_SPACING, Y);
-		add(jlb);
-		Field[] fields = SyntaxConstants.class.getDeclaredFields();
-		for(Field f : fields){
-			  Object objectValue = "";
-			  Object value = f.get(objectValue);
-			  values.put(f.getName().replace("SYNTAX_STYLE_", "").toLowerCase().replace('_', ' '),
-					  ((String) value).replace("text/", ""));
-		}
-	    Vector<String> items = new Vector<>();
-        for (Map.Entry<String,String> entry : values.entrySet()) {
-            items.add(entry.getKey());
-			//  System.out.println(entry.getKey() + "    " + entry.getValue());
-        }
+		this.add(jlb);
         JComboBox<String> jls = new JComboBox<String>(items);
         // To change the arrow button's background
         jls.setRenderer(new CustomComboBoxRenderer());
-        jls.setUI(new BasicComboBoxUI() {
-            @Override protected JButton createArrowButton()
-            {
-                return new BasicArrowButton(SwingConstants.SOUTH, null, null, Color.GRAY, null);
-            }
-        });
+        
         jls.setBackground(new Color(10,10,12));
-        //jls.setForeground(app.MenuFG);
-        jls.setSelectedItem(getSyntaxKey(stng.get("syntax")));
+        
+        jls.setSelectedItem(getSyntaxKey(stng.get(key)));
         jls.addItemListener(e -> {
-    		stng.set("syntax", values.get(e.getItem()));
+    		stng.set(key, values.get(e.getItem()));
     		refresh();
     	});
         jls.setOpaque(true);
 		jls.setSize(234, 41);
 		jls.setLocation(getWidth()/2 + TEXT_SPACING*2,Y+ 26);
-		add(jls);
+		this.add(jls);
 		Y+=60+VARIABLE_SPACING;
 	}
 	
@@ -308,35 +387,6 @@ public class PreferencesMenu extends JPanel implements FolderButton {
 			}
 		}
 		return null;
-	}
-
-
-	@Override
-	public void paintComponent(Graphics g) {
-		//NGSScrollPane sp1 = window.getScrollPane();
-        //sp1.repaint();
-		super.paintComponent(g);
-
-	    g.setColor(new Color(10,10,12));
-	    g.fillRect(getBuffer(), 0, getWidth(), getHeight());
-	    
-	    paintFB(g, window.getScrollPane());
-		g.setColor(app.contentpane.getBackground());
-		((Graphics2D)g).setStroke(new BasicStroke(10));
-		g.drawLine(0, 0, 0, getHeight());
-	}
-	public final JButton jl = new JButton(">") {
-		private static final long serialVersionUID = 3394518635747541418L;
-
-		@Override public void paint(Graphics g) {}
-	};
-	@Override
-	public JButton getFolderButton() {
-		return jl;
-	}
-	@Override
-	public App getApp() {
-		return app;
 	}
 }
 class CustomComboBoxRenderer extends DefaultListCellRenderer {

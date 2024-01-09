@@ -1,13 +1,13 @@
 package NNU.Editor;
 
-import java.awt.BasicStroke;
+import static NNU.Editor.AssetManagement.StringTable.getString;
+
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.KeyboardFocusManager;
 import java.awt.Point;
-import java.awt.RenderingHints;
+import java.awt.Rectangle;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.dnd.DnDConstants;
@@ -23,10 +23,10 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
 
-import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JMenu;
 import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
@@ -34,39 +34,38 @@ import javax.swing.KeyStroke;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
 import javax.swing.plaf.TextUI;
+import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
+import javax.swing.text.DocumentFilter;
 
-import org.fife.ui.autocomplete.AutoCompletion;
-import org.fife.ui.autocomplete.BasicCompletion;
-import org.fife.ui.autocomplete.CompletionProvider;
-import org.fife.ui.autocomplete.DefaultCompletionProvider;
-import org.fife.ui.autocomplete.ShorthandCompletion;
-import org.fife.ui.rsyntaxtextarea.AbstractTokenMakerFactory;
+import org.fife.ui.rsyntaxtextarea.RSyntaxDocument;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
+import org.fife.ui.rsyntaxtextarea.Style;
+import org.fife.ui.rsyntaxtextarea.SyntaxScheme;
 import org.fife.ui.rsyntaxtextarea.Theme;
-import org.fife.ui.rsyntaxtextarea.TokenMakerFactory;
 import org.fife.ui.rtextarea.ConfigurableCaret;
 
 import NNU.Editor.Menus.FindMenu;
-import NNU.Editor.Menus.Components.FolderButton;
 import NNU.Editor.Menus.Components.LineTextArea;
 import NNU.Editor.Menus.Components.NGSScrollPane;
 import NNU.Editor.Utils.SmartGraphics2D;
+import NNU.Editor.Utils.UserMessager;
 import NNU.Editor.Utils.Utils;
-import NNU.Editor.Utils.ValueNotFoundException;
-import NNU.Editor.Windows.Window;
+import NNU.Editor.Windows.Interfaces.Editor;
+import NNU.Editor.Windows.Interfaces.Savable;
+import NNU.Editor.Windows.Interfaces.Window;
 
-public class SyntaxTextArea extends RSyntaxTextArea implements DocumentListener, FolderButton {
+public class EditorTextArea extends RSyntaxTextArea implements DocumentListener, Savable, Editor {
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 4557978198642746316L;
 	
-	private String FilePath = "\000";
+	public SyntaxScheme snxsc;
+	private String FilePath = "";
 	private static String tx = "text/";
-	private static String syn = "syntax";
+	private static String syn = "editor.syntax";
     public LineTextArea lta;
     private boolean saved = true;
     public final Window window;
@@ -78,35 +77,20 @@ public class SyntaxTextArea extends RSyntaxTextArea implements DocumentListener,
         String[] arr = fp.split("[.]");
         String ext = arr[arr.length-1];
 		if (arr.length>1&&App.fileext.get(ext.toLowerCase().trim())!=null)
-			setSyntaxEditingStyle(tx + ((String) App.fileext.get(ext)).toLowerCase().trim());
+			setSyntaxEditingStyle(tx + App.fileext.get(ext).toString().toLowerCase().trim());
 		else
-			try {
-				setSyntaxEditingStyle(tx + app.stng.get(syn).toLowerCase().trim());
-			} catch (ValueNotFoundException e) {e.printStackTrace();}
+			setSyntaxEditingStyle(tx + App.stng.get(syn).toLowerCase().trim());
     	FilePath = fp;
-    	app.redraw();
-    	//App.fileext
+        window.getTab().setIcon(app.Folder.getIcon1(new File(fp)));
     }
     public String getFilePath() {
     	return FilePath;
     }
 
-	public SyntaxTextArea(App app, Window w) {
+	public EditorTextArea(App app, Window w) {
 		
 		window = w;
 		this.app = app;
-		
-	    /*CompletionProvider provider = createCompletionProvider();
-	    AutoCompletion ac = new AutoCompletion(provider);
-	    ac.install(this);*/
-	      
-		
-        try {
-			setSyntaxEditingStyle(tx + app.stng.get(syn).toLowerCase().trim());
-			AbstractTokenMakerFactory atmf = (AbstractTokenMakerFactory)TokenMakerFactory.getDefaultInstance();
-			atmf.putMapping("text/myLanguage", "NNU.Editor.TestTokenizer");
-			//setSyntaxEditingStyle("text/myLanguage");
-		} catch (ValueNotFoundException e) {e.printStackTrace();}
         
         setCodeFoldingEnabled(true);
         setAntiAliasingEnabled(true);
@@ -114,12 +98,19 @@ public class SyntaxTextArea extends RSyntaxTextArea implements DocumentListener,
         setPaintTabLines(true);
         setCaretColor(Color.LIGHT_GRAY);
         
-        InputStream inpstr = App.class.getResourceAsStream("/NNU/Editor/Style.xml");
-        Theme theme = null;
 		try {
-			theme = Theme.load(inpstr);
+	        InputStream inpstr = App.class.getResourceAsStream("/NNU/Editor/Style.xml");
+			Theme theme = Theme.load(inpstr);
+	        theme.apply(this);
+			snxsc = new SyntaxScheme(true);
+			Style[] source = getSyntaxScheme().getStyles();
+			Style[] styles = new Style[source.length + 3];
+			System.arraycopy(source, 0, styles, 0, source.length);
+			snxsc.setStyles(new Style[50]);
+			snxsc.setStyle(40, new Style(Color.red));
+			//System.out.println(snxsc.getStyleCount());
+			//setSyntaxScheme(snxsc);
 		} catch (IOException e) {e.printStackTrace();}
-        theme.apply(this);
         this.getDocument().addDocumentListener(this);
         this.setFont(app.getFont());
         this.setBackground(new Color(10,10,12));
@@ -129,21 +120,57 @@ public class SyntaxTextArea extends RSyntaxTextArea implements DocumentListener,
         this.setSelectedTextColor(new Color(255,255,255));
         
         this.setOpaque(true);
-        this.setBorder(null);
         this.setLayout(null);
         
-        JMenuItem FIND = new JMenuItem("Find and Replace");
+        JMenuItem FIND = new JMenuItem(getString("editor.find"));
 
         FIND.addActionListener(e -> openFind());
         FIND.setMnemonic(KeyEvent.VK_F);
-        FIND.setToolTipText("Find and Replace");
         
         //this.getPopupMenu().addSeparator();
 		JPopupMenu jpm = this.getPopupMenu();
         jpm.add(FIND,9);
         jpm.addSeparator();
         jpm.add(jpmln);
-        setBorder(new EmptyBorder(0,getBuffer(),0,0));
+        setBorder(new EmptyBorder(0,App.getBuffer(),0,App.getBuffer()));
+        jpm.addPopupMenuListener(new PopupMenuListener() {
+			
+			@Override
+			public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+				int i = 0;
+				JMenuItem un = ((JMenuItem)jpm.getComponent(i));
+				un.setText(un.isEnabled()?getString("editor.undo.enabled"):getString("editor.undo.disabled"));
+				i++;
+				JMenuItem re = ((JMenuItem)jpm.getComponent(i));
+				re.setText(re.isEnabled()?getString("editor.redo.enabled"):getString("editor.redo.disabled"));
+				i+=2;
+				((JMenuItem)jpm.getComponent(i)).setText(getString("editor.cut"));
+				i++;
+				((JMenuItem)jpm.getComponent(i)).setText(getString("editor.copy"));
+				i++;
+				((JMenuItem)jpm.getComponent(i)).setText(getString("editor.paste"));
+				i++;
+				((JMenuItem)jpm.getComponent(i)).setText(getString("editor.delete"));
+				i+=2;
+				((JMenuItem)jpm.getComponent(i)).setText(getString("editor.selectall"));
+				i+=3;
+				((JMenu)jpm.getComponent(i)).setText(getString("editor.folding"));
+				((JMenuItem) (((JMenu) jpm.getComponent(i)).getMenuComponents()[0]))
+					.setText(getString("editor.folding.togglecurrent"));
+				((JMenuItem) (((JMenu) jpm.getComponent(i)).getMenuComponents()[1]))
+				.setText(getString("editor.folding.collapseallcomments"));
+				((JMenuItem) (((JMenu) jpm.getComponent(i)).getMenuComponents()[2]))
+				.setText(getString("editor.folding.collapseallfolds"));
+				((JMenuItem) (((JMenu) jpm.getComponent(i)).getMenuComponents()[3]))
+				.setText(getString("editor.folding.expandallfolds"));
+			}
+			
+			@Override
+			public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {}
+			
+			@Override
+			public void popupMenuCanceled(PopupMenuEvent e) {}
+		});
         
         ((ConfigurableCaret) this.getCaret()).setBlinkRate(0);
         
@@ -168,7 +195,7 @@ public class SyntaxTextArea extends RSyntaxTextArea implements DocumentListener,
 	            }
 			}
         };
-
+        
         setFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS,
         		Collections.emptySet());
         
@@ -180,9 +207,18 @@ public class SyntaxTextArea extends RSyntaxTextArea implements DocumentListener,
         // Connect the label with a drag and drop listener
         new DropTarget(this, myDragDropListener);
         
-        initjl(this,sp);
-        
         app.redraw();
+        
+        ((RSyntaxDocument) this.getDocument()).setDocumentFilter(new DocumentFilter() {
+            @Override
+            public void insertString(FilterBypass fb, int offset, String string,
+                    AttributeSet attr) throws BadLocationException {
+            	String finalstr = string;
+            	if ("{".equals(finalstr))
+            		finalstr += " }";
+            	fb.insertString(offset, finalstr, attr);
+			}
+        });
 	}
 	
 	@Override public JPopupMenu getPopupMenu() {
@@ -192,7 +228,7 @@ public class SyntaxTextArea extends RSyntaxTextArea implements DocumentListener,
 			int i = getLineOfOffset(caretpos);
 			if(i!=-1) row = i + 1 + "";
 		} catch (BadLocationException e) {row = "Unknown line";}
-		jpmln.setText(row);
+		jpmln.setText(getString("editor.linenum", row));
 		return super.getPopupMenu();
 	}
 	
@@ -210,33 +246,34 @@ public class SyntaxTextArea extends RSyntaxTextArea implements DocumentListener,
 
 	@Override
 	public void paintComponent(Graphics gra) {
-		try {
-			NGSScrollPane sp1 = window.getScrollPane();
-	        //sp1.repaint();
-			Color c = gra.getColor();
-			gra.setColor(getBackground());
-			gra.fillRect(0, 0, getWidth(), getHeight());
-			gra.setColor(c);
-			TextUI ui = getUI();
-			if (ui != null) {
-				Graphics2D g = (Graphics2D) gra.create(0, 0, getWidth(), getHeight());
-				if (app.stng.getBoolean("textantialias"))
-					g.setRenderingHint(
-				        RenderingHints.KEY_TEXT_ANTIALIASING,
-				        RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-				SmartGraphics2D.SuccessfulDrawCalls = 0;
-				ui.update(new SmartGraphics2D(g, getVisibleRect()), this);
-				//System.out.println(SmartGraphics2D.SuccessfulDrawCalls);
-				gra.setColor(app.contentpane.getBackground());
-				((Graphics2D)gra).setStroke(new BasicStroke(10));
-				gra.drawLine(0, 0, 0, getHeight());
-			}
-			this.paintFB(gra, sp1);
-			sp1.paintLines(gra);
-		} catch (ValueNotFoundException e) {e.printStackTrace();}
+		NGSScrollPane sp1 = window.getScrollPane();
+		//System.out.println(getSyntaxScheme().getStyleCount());
+		//setSyntaxScheme(snxsc);
+		//System.out.println(getSyntaxScheme().getStyleCount());
+		//sp1.repaint();
+		Color c = gra.getColor();
+		gra.setColor(getBackground());
+		gra.fillRect(0, 0, getWidth(), getHeight());
+		gra.setColor(c);
+		TextUI ui = getUI();
+		if (ui != null) {
+			Graphics2D g = (Graphics2D) gra.create(0, 0, getWidth(), getHeight());
+			
+			Rectangle r = getVisibleRect();
+			r.height +=50;
+			App.adjustAntialias(g,false);
+			SmartGraphics2D.SuccessfulDrawCalls = 0;
+			ui.update(new SmartGraphics2D(g, r), this);
+		}
+		sp1.paintSeperators((Graphics2D)gra);
+		sp1.paintLines(gra);
+		
+		/*try {
+			setSyntaxEditingStyle("text/myLanguage");
+		} catch (Exception e) {e.printStackTrace();System.exit(0);}*/
 	}
 	
-	public FindMenu fm;
+	public JPanel fm;
 	
 	public void openFind() {
 		if (fm==null) {
@@ -247,25 +284,33 @@ public class SyntaxTextArea extends RSyntaxTextArea implements DocumentListener,
 		fm.getComponents()[0].requestFocus();
 	}
 	
+	public void gotoLineMenu() {
+		int ans = Integer.parseInt(
+				UserMessager.inputTB("","editor.goto.title", "editor.goto.content"));
+		try {
+			this.setCaretPosition(this.getLineEndOffset(ans-1)-1);
+		} catch (BadLocationException e) {
+			UserMessager.showErrorDialogTB("editor.err.invalidline.title", "editor.err.invalidline", ans);
+			e.printStackTrace();
+		}
+	}
+	
 	/**
 	 * Sets the current file of the textArea
 	 * @param load whether to load the file into the TextArea's text bar or not.
 	 * @param save whether to display a save button or open button (this option does not actually save)
 	 */
 	public void openfile(boolean load, boolean save) {
-		String res = "\000";
-		while ("\000".equals(res)) {
+		String res = "";
+		while ("".equals(res)) {
 			res = Utils.openFileDialog(save);
 	        if(res != null&&!"/".equals(res.trim()) && !res.trim().isEmpty()) {
 	            try {
 					File f = new File(res);
 					if (!f.exists() && !f.createNewFile())
 							throw new Exception("Can't create file");
-					if ("\000".equals(res)) {
-						JOptionPane.showMessageDialog(this,
-							    "file is '\000'.? ",
-							    "Error reading file",
-							    JOptionPane.ERROR_MESSAGE);
+					if ("".equals(res)) {
+						UserMessager.showErrorDialogTB("err.readfile.title", "err.readfile.empty");
 						continue;
 					}
 					setFilePath(res);
@@ -276,10 +321,8 @@ public class SyntaxTextArea extends RSyntaxTextArea implements DocumentListener,
 						app.repaint();
 					}
 				} catch (Exception e) {
-					JOptionPane.showMessageDialog(this,
-						    "Unable to read file due to error: " + e.getMessage(),
-						    "Error reading file",
-						    JOptionPane.ERROR_MESSAGE);
+					UserMessager.showErrorDialogTB
+						("err.readfile.title","err.readfile.exception",e.getMessage());
 					e.printStackTrace();
 				}
 	        } else {
@@ -288,19 +331,19 @@ public class SyntaxTextArea extends RSyntaxTextArea implements DocumentListener,
 		}
 	}
 	
-	public boolean megaSave(boolean ask) {
+	public boolean Save(boolean ask) {
+		if (isSaved()) return true;
 		int result = 0;
 		if (ask)
-			result = JOptionPane.showConfirmDialog((Component) null,
-				"Do you want to save?","alert", JOptionPane.YES_NO_CANCEL_OPTION);
-    	if (result==JOptionPane.CANCEL_OPTION)
+			result = UserMessager.confirmTB_c("confirm.save","confirm.save");
+    	if (result==UserMessager.CANCEL_OPTION)
     		return false;
-    	if (result==JOptionPane.YES_OPTION&&"\000".equals(this.getFilePath())) {
+    	if (result==UserMessager.YES_OPTION&&"".equals(this.getFilePath())) {
     		this.openfile(false, true);
     	}
-    	if (result==JOptionPane.NO_OPTION)
+    	if (result==UserMessager.NO_OPTION)
     		return true;
-		if ("\000".equals(this.getFilePath())) return false;
+		if ("".equals(this.getFilePath())) return false;
 		setSaved(true);
 		return Utils.save(this.getFilePath(), this.getText());
 	}
@@ -311,20 +354,16 @@ public class SyntaxTextArea extends RSyntaxTextArea implements DocumentListener,
 	 * @throws ValueNotFoundException
 	 * @throws IOException
 	 */
-	public void refresh() throws ValueNotFoundException {
-		
-		/* I was unable to get this to work so I'll try to fix it in the next release.*/
-        //InputStream inpstr = App.class.getResourceAsStream("/NNU/Editor/Style.xml");
-        //Theme theme = Theme.load(inpstr);
+	public void refresh() {
         
-        /* Refresh the font and language*/
+        /* Refresh the font and language */
 		this.setFont(app.getFont());
         String[] arr = FilePath.split("[.]");
         String ext = arr[arr.length-1];
 		if (arr.length>1&&App.fileext.get(ext.toLowerCase().trim())!=null)
 			setSyntaxEditingStyle(tx + ((String) App.fileext.get(ext)).toLowerCase().trim());
 		else {
-			setSyntaxEditingStyle(tx + app.stng.get(syn).toLowerCase().trim()); 
+			setSyntaxEditingStyle(tx + App.stng.get(syn).toLowerCase().trim()); 
 		}
 	}
 	public boolean isSaved() {
@@ -334,24 +373,16 @@ public class SyntaxTextArea extends RSyntaxTextArea implements DocumentListener,
 		this.saved = saved;
 		window.getTab().repaint();
 	}
- 
+	boolean b = false;
+	synchronized boolean getb(){return b;}
+	synchronized void setb(boolean b){this.b = b;}
     public void insertUpdate(DocumentEvent e) {
         updateLog();
-        int pos = e.getOffset();
-        try {
-			if (this.getText(pos, 1).equals("{")) {
-				setText(FilePath);
-			}
-		} catch (BadLocationException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
     }
     public void removeUpdate(DocumentEvent e) {
         updateLog();
     }
-    public void changedUpdate(DocumentEvent e) {
-    }
+    public void changedUpdate(DocumentEvent e) {}
 
     public void updateLog() {
     	setSaved(false);
@@ -359,29 +390,6 @@ public class SyntaxTextArea extends RSyntaxTextArea implements DocumentListener,
     	getHighlighter().removeAllHighlights();
     	window.getScrollPane().countLines(this);
     }
-	public final JButton jl = new JButton(">") {
-		private static final long serialVersionUID = 3394518635747541418L;
-
-		@Override public void paint(Graphics g) {app.paintJB();}
-	};
-	
-	@Override
-	public JButton getFolderButton() {
-		return jl;
-	}
-
-	@Override
-	public App getApp() {
-		return app;
-	}
-	@Override public int hashCode() {
-		return this.getFilePath().hashCode();
-	}
-	@Override public boolean equals(Object obj) {
-		if (!(obj instanceof String)) return super.equals(obj);
-		return FilePath.equals(obj);
-	}
-	
 	public boolean equals(String obj) {
 		return FilePath.equals(obj);
 	}
@@ -391,45 +399,22 @@ public class SyntaxTextArea extends RSyntaxTextArea implements DocumentListener,
 		}
 		return lta;
 	}
-
-	   /**
-	    * Create a simple provider that adds some Java-related completions.
-	    */
-	   private CompletionProvider createCompletionProvider() {
-
-	      // A DefaultCompletionProvider is the simplest concrete implementation
-	      // of CompletionProvider. This provider has no understanding of
-	      // language semantics. It simply checks the text entered up to the
-	      // caret position for a match against known completions. This is all
-	      // that is needed in the majority of cases.
-	      DefaultCompletionProvider provider = new DefaultCompletionProvider();
-
-	      // Add completions for all Java keywords. A BasicCompletion is just
-	      // a straightforward word completion.
-	      provider.addCompletion(new BasicCompletion(provider, "abstract"));
-	      provider.addCompletion(new BasicCompletion(provider, "assert"));
-	      provider.addCompletion(new BasicCompletion(provider, "break"));
-	      provider.addCompletion(new BasicCompletion(provider, "case"));
-	      // ... etc ...
-	      provider.addCompletion(new BasicCompletion(provider, "transient"));
-	      provider.addCompletion(new BasicCompletion(provider, "try"));
-	      provider.addCompletion(new BasicCompletion(provider, "void"));
-	      provider.addCompletion(new BasicCompletion(provider, "volatile"));
-	      provider.addCompletion(new BasicCompletion(provider, "while"));
-	      
-	      String prnln = "System.out.println(";
-	      
-	      // Add a couple of "shorthand" completions. These completions don't
-	      // require the input text to be the same thing as the replacement text.
-	      provider.addCompletion(new ShorthandCompletion(provider, "sysout",
-	    		  prnln, prnln));
-	      provider.addCompletion(new ShorthandCompletion(provider, "sout",
-	    		  prnln, prnln));
-	      provider.addCompletion(new ShorthandCompletion(provider, "syserr",
-	            "System.err.println(", "System.err.println("));
-	      
-
-	      return provider;
-
-	   }
+	@Override public int hashCode() {
+		return this.getFilePath().hashCode();
+	}
+	@Override public boolean equals(Object obj) {
+		if (!(obj instanceof String)) return super.equals(obj);
+		return FilePath.equals(obj);
+	}
+	@Override
+	public boolean isOpen(String path) {
+		return FilePath.equals(path);
+	}
+	@Override
+	public void escape() {
+		remove(fm);
+		fm = null;
+		repaint();
+		requestFocus();
+	}
 }

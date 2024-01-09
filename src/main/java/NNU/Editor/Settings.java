@@ -1,18 +1,20 @@
 package NNU.Editor;
 
+import java.awt.Color;
+import java.awt.Font;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Scanner;
 
-import javax.swing.JOptionPane;
-
-import NNU.Editor.Utils.ValueNotFoundException;
+import NNU.Editor.Utils.UserMessager;
+import NNU.Editor.Utils.Utils;
 
 public class Settings {
 	
@@ -36,12 +38,17 @@ public class Settings {
 		try {
 			file = new File(FilePath);
 			if (!file.exists()&&(makefile(FilePath))) {
-					map = new HashMap<String,Object>(defaults);
-					save();
-				
+				map = new HashMap<String,Object>(defaults);
+				save();
 			}
 			read(new FileInputStream(file));
-		} catch (IOException e) {
+		} catch (Exception e) {
+			map = new HashMap<String,Object>(defaults);
+			try {
+				save();
+			} catch (Exception e1) {
+				e1.printStackTrace();
+			}
 			e.printStackTrace();
 		}
 	}
@@ -54,12 +61,25 @@ public class Settings {
 	}
 	public Settings(InputStream ins, App app) {
 		this.app = app;
-		read(ins);
+		try {
+			read(ins);
+		} catch (ReadException e) {
+			System.out.println("Corrupted properties file");
+			UserMessager.showErrorDialogTB("err.corruptedsettings.title","err.corruptedsettings",e.line);
+			System.exit(1);
+		}
 	}
 	protected Settings(InputStream ins) {
 		this.app = null;
-		read(ins);
+		try {
+			read(ins);
+		} catch (ReadException e) {
+			System.out.println("Corrupted properties file");
+			UserMessager.showErrorDialogTB("err.corruptedsettings.title","err.corruptedsettings",e.line);
+			System.exit(1);
+		}
 	}
+	protected Settings() {this.app=null;}
 	protected boolean makefile(String FilePath) throws IOException {
 		try {
 			new File(FilePath).getParentFile().mkdirs();
@@ -78,34 +98,34 @@ public class Settings {
 		app.refreshSettings();
 	}
 	
-	protected void read(InputStream ins)  {
+	protected void read(InputStream ins) throws ReadException  {
 		Scanner myReader = new Scanner(ins);
-		StringBuilder strb = new StringBuilder();
+		ArrayList<String> lines = new ArrayList<String>();
 		while (myReader.hasNextLine())
-			strb.append(myReader.nextLine() + "\n");
-		//System.out.println(strb);
+			lines.add(myReader.nextLine());
 	    myReader.close();
-	    finalizelist(strb.toString());
+	    finalizelist(lines.toArray(new String[0]));
 	}
-	protected void finalizelist(String string) {
+	protected void finalizelist(String[] ls) throws ReadException {
 		map = new HashMap<String,Object>();
-		String[] ls = string.split("\n");
 		for (int i = 0;i<ls.length;i++) {
 			try {
-				if (ls[i].isEmpty()) continue;
+				if (ls[i].trim().isEmpty()) continue;
+				if (ls[i].charAt(0)=='#') continue;
 				String[] kAV = ls[i].split("=", 2);
 				map.put(kAV[0], kAV[1]);
 			} catch (Exception e) {
-				JOptionPane.showMessageDialog(null,
-						"Corrupted settings file! can't open thy program!",
-						"Error reading settings file", JOptionPane.ERROR_MESSAGE);
-				System.exit(1);
+				throw new ReadException(i);
 			}
+			
 		}
 	}
-	public String get(String key) throws ValueNotFoundException {
+	public String get(String key) {
 		String res = null;
-		res = (String) map.get(key);
+		Object r = map.get(key);
+		if (r instanceof String)
+			res = (String) r;
+		else if (r!=null) res = String.valueOf(r);
 		if (res==null) {
 			res = (String) defaults.get(key);
 			map.put(key, res);
@@ -114,16 +134,16 @@ public class Settings {
 			} catch (IOException e) {e.printStackTrace();}
 		}
 		if (res==null) {
-			for (Map.Entry<String, Object> entry : map.entrySet()) {
-			    System.out.println(entry.getKey()+" : "+entry.getValue());
-			}
-			throw new ValueNotFoundException("The key " + key + 
+			System.err.println("The key " + key + 
 					" does not exist in either user settings or defaults");
+			for (Map.Entry<String, Object> entry : map.entrySet()) {
+			    System.err.println(entry.getKey()+" : "+entry.getValue());
+			}
 		}
 		return res;
 		
 	}
-	public boolean getBoolean(String key) throws ValueNotFoundException {
+	public boolean getBoolean(String key) {
 		return Boolean.TRUE.equals(Boolean.valueOf(get(key)));
 		
 	}
@@ -143,11 +163,35 @@ public class Settings {
 		try {
 			save();
 		} catch (IOException e) {e.printStackTrace();}
-		
 	}
-	public int getInt(String string) throws ValueNotFoundException {
-		return Integer.valueOf(get(string));
+	public void set(String key,Font f) {
+		set(key+".family", f.getFamily());
+		set(key+".size", f.getSize());
+		set(key+".style", f.getStyle());
+	}
+	public void set(String key,Color f) {
+		set(key+".r", f.getRed  ());
+		set(key+".g", f.getGreen());
+		set(key+".b", f.getBlue ());
+		set(key+".a", f.getAlpha());
+	}
+	public int getInt(String string) {
+		return Integer.valueOf(get(string).trim().replaceAll("[^\\d]+", ""));
+	}
+	public Font getFont(String str) {
+		return new Font
+				(get(str+".family"), Utils.parseInt(get(str+".style")), Utils.parseInt(get(str+".size")));
+	}
+	public Color getColor(String key) {
+		return new Color(getInt(key+".r"),getInt(key+".g"),getInt(key+".b"),getInt(key+".a"));
 	}
 	
-	
+	protected static class ReadException extends Exception{
+		private static final long serialVersionUID = 6607957682950815858L;
+		public int line;
+		protected ReadException(int line) {
+			super();
+			this.line=line;
+		}
+	}
 }

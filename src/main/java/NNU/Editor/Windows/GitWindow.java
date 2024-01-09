@@ -8,7 +8,7 @@ import NNU.Editor.App;
 import NNU.Editor.Menus.GitMenu;
 import NNU.Editor.Menus.Components.NGSScrollPane;
 import NNU.Editor.Menus.Components.Tab;
-import NNU.Editor.Utils.ValueNotFoundException;
+import NNU.Editor.Windows.Interfaces.Window;
 
 public class GitWindow implements Window {
 
@@ -75,15 +75,12 @@ public class GitWindow implements Window {
 	}
 
 	@Override
-	public void refresh() throws ValueNotFoundException, IOException {}
+	public void refresh() throws IOException {}
 
 	@Override
-	public void resize() {menu.resizeButton(sp);}
+	public void resize() {}
 
 	@Override
-	public void delete() {
-		// TODO Auto-generated method stub
-		
-	}
+	public void delete() {}
 
 }

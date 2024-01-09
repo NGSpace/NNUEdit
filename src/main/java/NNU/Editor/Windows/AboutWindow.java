@@ -6,12 +6,14 @@ import java.io.IOException;
 import javax.swing.JComponent;
 
 import NNU.Editor.App;
+import NNU.Editor.AssetManagement.StringTable;
 import NNU.Editor.Menus.AboutMenu;
 import NNU.Editor.Menus.Components.NGSScrollPane;
 import NNU.Editor.Menus.Components.Tab;
-import NNU.Editor.Utils.ValueNotFoundException;
+import NNU.Editor.Utils.Utils;
+import NNU.Editor.Windows.Interfaces.Window;
 
-public class AboutWindow implements Window{
+public class AboutWindow implements Window {
 
 	protected AboutMenu menu;
 	protected NGSScrollPane sp;
@@ -24,6 +26,7 @@ public class AboutWindow implements Window{
 		sp.setViewportView(menu);
         this.tab = new Tab(app, this);
         this.app = app;
+        tab.setIcon(Utils.ReadImageIcon("ui/NNUEdit72x72.png"));
         
         sp.getHorizontalScrollBar().setPreferredSize(new Dimension(25,0));
         sp.getHorizontalScrollBar().setLocation(sp.getWidth() - 25, 0);
@@ -50,7 +53,7 @@ public class AboutWindow implements Window{
 
 	@Override
 	public String getTitle() {
-		return "About";
+		return StringTable.getString("about.title", Utils.EDITORNAME);
 	}
 
 	@Override
@@ -79,15 +82,12 @@ public class AboutWindow implements Window{
 	}
 
 	@Override
-	public void refresh() throws ValueNotFoundException, IOException {}
+	public void refresh() throws IOException {}
 
 	@Override
-	public void resize() {menu.resizeButton(sp);}
+	public void resize() {}
 
 	@Override
-	public void delete() {
-		// TODO Auto-generated method stub
-		
-	}
+	public void delete() {}
 
 }

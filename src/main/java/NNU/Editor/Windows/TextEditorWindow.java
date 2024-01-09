@@ -6,14 +6,15 @@ import java.io.IOException;
 import javax.swing.JComponent;
 
 import NNU.Editor.App;
-import NNU.Editor.SyntaxTextArea;
+import NNU.Editor.EditorTextArea;
 import NNU.Editor.Menus.Components.NGSScrollPane;
 import NNU.Editor.Menus.Components.Tab;
-import NNU.Editor.Utils.ValueNotFoundException;
+import NNU.Editor.Windows.Interfaces.Editor;
+import NNU.Editor.Windows.Interfaces.EditorWindow;
 
-public class TextEditorWindow implements Window {
+public class TextEditorWindow implements EditorWindow {
 
-	protected SyntaxTextArea textArea;
+	protected EditorTextArea textArea;
 	protected NGSScrollPane sp;
 	protected Tab tab;
 	protected App app;
@@ -24,16 +25,10 @@ public class TextEditorWindow implements Window {
 
         sp = new NGSScrollPane(app);
         
-		textArea = new SyntaxTextArea(app,this);
+		textArea = new EditorTextArea(app,this);
 		sp.setViewportView(textArea);
-		
-        sp.setBorder(null);
-        sp.setOpaque(true);
         
         tab = new Tab(app, this);
-        
-        sp.setBounds(0, App.MenuBarSize(), app.getWidth(),
-        		app.getHeight() - App.MenuBarSize() - App.TabSize());
 
         app.contentpane.add(getScrollPane());
         app.contentpane.add(getTab());
@@ -52,8 +47,8 @@ public class TextEditorWindow implements Window {
 
 	@Override
 	public String getTitle() {
-		return ("\000".equals(textArea.getFilePath()) ? "Unknown" : 
-			new File(textArea.getFilePath()).getName()) + (textArea.isSaved() ? "" : "*");
+		return ("".equals(textArea.getFilePath()) ? "Unknown" : 
+			new File(textArea.getFilePath()).getName());
 	}
 
 	@Override
@@ -73,11 +68,11 @@ public class TextEditorWindow implements Window {
 
 	@Override
 	public boolean Save(boolean ask) {
-		return textArea.megaSave(ask);
+		return textArea.Save(ask);
 	}
 
 	@Override
-	public void refresh() throws ValueNotFoundException, IOException {
+	public void refresh() throws IOException {
 		textArea.refresh();
 		tab.setText(getTitle());
 	}
@@ -92,18 +87,20 @@ public class TextEditorWindow implements Window {
 		if (Reason.length>0&&Reason[0]!=null) {
 			return Save((boolean) Reason[0]);
 		} else {
-			return Save("\000".equals(textArea.getFilePath()));
+			return Save("".equals(textArea.getFilePath()));
 		}
 	}
 
 	@Override
 	public void resize() {
 		textArea.Resize();
-		textArea.resizeButton(sp);
 	}
 
+	@Override public void delete() {}
+
 	@Override
-	public void delete() {
+	public Editor getEditor() {
+		return textArea;
 	}
 
 }

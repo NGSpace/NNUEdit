@@ -1,14 +1,11 @@
 package NNU.Editor;
 
-import java.awt.BasicStroke;
-import java.awt.Component;
+import static NNU.Editor.AssetManagement.StringTable.getStringRaw;
+
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.RenderingHints;
 
 import javax.swing.JPanel;
-
-import NNU.Editor.Utils.ValueNotFoundException;
 
 public class AppPanel extends JPanel {
 
@@ -28,42 +25,50 @@ public class AppPanel extends JPanel {
 	}
 	
 	@Override public void paint(Graphics gra) {
+		super.paint(gra);
 		if (painting) return;
-		painting = true;super.paint(gra);
+		painting = true;
 		if (app.getSelectedWindow()==null||!app.getSelectedWindow().getScrollPane().isVisible()) {
     		Graphics2D g = (Graphics2D) gra;
     		g.setFont(app.getTipFont());
     		g.setColor(App.MenuFG);
     		
-    		try {
-				if (app.stng.getBoolean("textantialias")) {
-					g.setRenderingHint(
-					        RenderingHints.KEY_TEXT_ANTIALIASING,
-					        RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-		    		g.setRenderingHint(
-		    		        RenderingHints.KEY_ANTIALIASING,
-		    		        RenderingHints.VALUE_ANTIALIAS_ON);
-				}
-			} catch (ValueNotFoundException e) {
-				e.printStackTrace();
-			}
+    		App.adjustAntialias(g,true);
     		
-    		String str = "You can open a new window by pressing CTRL + O";
+    		String string = getStringRaw("app.clickhere");
+    		String[] strs = string.split("%",2);
+    		
+    		if (strs.length!=2) strs = new String[] {"STR "," MISSING"};
+    		
+    		string = strs[0] + "CTRL + O" + strs[1];
+    		int keywidth = g.getFontMetrics().stringWidth(strs[0]);
+    		int ctrlwidth = g.getFontMetrics().stringWidth("CTRL + 0 ");
+    		int totalwidth = g.getFontMetrics().stringWidth(string);
+
+    		int x = getWidth() / 2 - (totalwidth / 2) + 
+    				(app.isFolderOpen() ? app.Folder.getWidth() : 0)/2;
+    		
+    		int y = ((getHeight() - g.getFontMetrics().getHeight()) / 2)
+    				+ g.getFontMetrics().getAscent();
+    		int strheight = (int) g.getFontMetrics().getLineMetrics(string, g).getHeight();
+    		g.drawString(string, x, y);
+    		
+    		g.drawRoundRect(x+keywidth-5, y-strheight+5, ctrlwidth+10, strheight+5, RoundedBox, RoundedBox);
+    		/*String key = "CTRL + O";
+    		String str = "Open a file with " + key;
+    		int keywidth = g.getFontMetrics().stringWidth(key);
     		int strwidth = g.getFontMetrics().stringWidth(str);
     		int x = getWidth() / 2 - (strwidth / 2) + 
     				(app.isFolderOpen() ? app.Folder.getWidth() : 0)/2;
     		
     		int y = ((getHeight() - g.getFontMetrics().getHeight()) / 2)
     				+ g.getFontMetrics().getAscent();
+    		int h = g.getFontMetrics().getHeight() / 2 + g.getFontMetrics().getAscent();
     		g.drawString(str, x, y);
+    		g.drawString(click, x, y+h);
     		g.setStroke(new BasicStroke(2));
-    		g.drawRoundRect(x+strwidth-187, y-40, 194, 50, RoundedBox, RoundedBox);
+    		g.drawRoundRect(x+strwidth-keywidth, y-40, keywidth, 50, RoundedBox, RoundedBox);*/
+    		
 		}painting = false;
-	}
-	
-	@Override public void paintComponents(Graphics g) {
-		for (Component i : this.getComponents())
-			i.paint(g.create(i.getX(), i.getY(), i.getWidth(), i.getHeight()));
-		
 	}
 }

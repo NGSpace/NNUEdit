@@ -1,36 +1,61 @@
 package NNU.Editor;
 
-import static java.lang.System.*;
-import static java.lang.System.setOut;
+import static java.lang.System.out;
 
 import java.awt.Color;
-import java.awt.Component;
-import java.awt.Graphics;
+import java.awt.Font;
+import java.awt.GraphicsEnvironment;
 import java.awt.Insets;
 import java.awt.Toolkit;
+import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URI;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Properties;
+import java.util.stream.Collectors;
 
-import javax.swing.Icon;
-import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.plaf.IconUIResource;
 
-import org.apache.maven.model.Model;
-import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
-
 import com.formdev.flatlaf.FlatDarkLaf;
 
-import NNU.Editor.Utils.BSPS;
+import NNU.Editor.Menus.Components.NodeIcon;
+import NNU.Editor.Utils.FancyPrint;
+import NNU.Editor.Utils.UserMessager;
+import NNU.Editor.Utils.Utils;
 import NNU.Editor.Windows.PreferencesWindow;
 
 public class Main {
 	
-	public static String Version = "Unknown";
+	public static final String SYSTEM = /* Remember to change the dependencies! */ "universal";
+	public static final String Version;
+	public static String shouldEvenTry = "maybe";
+	static {
+		Version = 'v' + getVersion();
+		
+		System.setProperty("sun.awt.noerasebackground", "true");
+		System.setProperty("sun.java2d.uiScale", "1.0");
+		
+		//System.setProperty("sun.java2d.opengl", "true"); /* Do it yourself if you want to */
+		
+		if (GraphicsEnvironment.isHeadless()) {
+			System.out.println("BRO RUNNING THIS ON A HEADLESS JVM/MACHINE XD");
+			shouldEvenTry = "no"; /* Ik I could've just System.exit() I just wanted to make this joke xD */
+		} else {
+			shouldEvenTry = "worth a shot!";
+	        System.setOut(new FancyPrint(System.out));
+	        out.println("Version of NNUEdit : " + Version);
+		}
+		
+        //System.setOut(new BSPS(out)); /* Shall never be used again :D */
+	}
 	
 	/**
      * the entry point of this weird ass code editor
@@ -38,14 +63,9 @@ public class Main {
 	 * @throws IOException 
      */
 	public static void main(String[] args) {
-		try {
-			MavenXpp3Reader reader = new MavenXpp3Reader();
-	        Model model = reader.read(new FileReader("pom.xml"));
-	        Version = model.getVersion();
-		} catch (Exception e) {
-			e.printStackTrace();
-			err.println("Unable to read jar Version");
-		}
+		if (shouldEvenTry.equals("no")) {giveUpInstantly();}
+		
+		Thread.setDefaultUncaughtExceptionHandler((t,e) -> {e.printStackTrace();});
 		Instant start = Instant.now();
         try {
         	out.println("Attempting to load flatlaf.");
@@ -61,6 +81,8 @@ public class Main {
             UIManager.put("Tree.showDefaultIcons ", true);
         	UIManager.put("Tree.collapsedIcon", new IconUIResource(new NodeIcon('+')));
         	UIManager.put("Tree.expandedIcon",  new IconUIResource(new NodeIcon('-')));
+        	UIManager.put("OptionPane.messageFont", new Font("Arial", Font.BOLD, 18));
+        	UIManager.put("OptionPane.buttonFont", new Font("Arial", Font.BOLD, 16));
         } catch (Exception e){
 			try {
 	        	out.println("Unable to load flatlaf, loading system look and feel.");
@@ -77,25 +99,43 @@ public class Main {
 		Instant end2 = Instant.now();
 		Duration timeElapsed2 = Duration.between(start, end2);
 		out.println("Milliseconds took to load ui: " + timeElapsed2.toMillis());
-        
-        //setOut(new BSPS(out));
 		
 		final StringBuilder starttext = new StringBuilder();
 		if (args.length>0) {
 			starttext.append(args[0]);
 			if (!new File(args[0]).exists()) {
 				System.err.println("File or Folder Doesn't exist: " + args[0]);
-				System.exit(1);
+				//System.exit(1);
 			}
 		}
 		
         SwingUtilities.invokeLater(() -> {
 			try {
+				Thread.setDefaultUncaughtExceptionHandler((t,e) -> {e.printStackTrace();});
 				App app = new App(starttext.toString());
-				app.setVisible(true);
 				Instant end = Instant.now();
-				Duration timeElapsed = Duration.between(start, end);
-				out.println("Milliseconds took to start: " + timeElapsed.toMillis());
+				Duration timeElapsed = Duration.between(end2, end);
+				out.println("Total milliseconds took to start: " + timeElapsed.toMillis());
+		        
+		        if (App.stng.getBoolean("system.checkversion"))
+			        try {
+						URL url = new URI(App.stng.get("system.updatecheckurl")).toURL();
+				        
+				        String NEWEST = new BufferedReader(new InputStreamReader(url.openStream(), 
+				                 StandardCharsets.UTF_8)).lines().collect(Collectors.joining("\n"));
+				        //NEWEST = "v1.3.0";
+				        out.println("Newest release of NNUEdit : " + NEWEST);
+				        String digitRegex = "[^\\d]";
+				        String ne = NEWEST.replaceAll(digitRegex, "");
+				        String ve = Version.replaceAll(digitRegex, "");
+				        if (!"".equals(ne) && (!"".equals(ve)) && Utils.parseInt(ne)> Utils.parseInt(ve))
+				        	UserMessager.showWarningDialogTB
+				        		("editor.newversionpopup.title", "editor.newversionpopup");
+			        } catch (Exception e) {
+						System.out.println("Could not check for new version due to:");
+						e.printStackTrace();
+					}
+				app.setVisible(true);
 				new Thread(() ->{
 					try {
 						Thread.sleep(3000);
@@ -105,37 +145,36 @@ public class Main {
 			} catch (Exception e) {e.printStackTrace();}
 		});
     }
-}
-
-class NodeIcon implements Icon {
-	private static final int SIZE = 20;
-
-    private char type;
-
-    public NodeIcon(char type) {
-        this.type = type;
-    }
-
-    public void paintIcon(Component c, Graphics g, int x, int y) {
-        g.setColor(UIManager.getColor("Tree.background"));
-        g.fillRect(x, y, SIZE - 1, SIZE - 1);
-
-        g.setColor(UIManager.getColor("Tree.hash").darker());
-        g.drawRect(x, y, SIZE - 1, SIZE - 1);
-
-        g.setColor(UIManager.getColor("Tree.foreground"));
-        
-        g.drawLine(x + 2, y + SIZE / 2, x + SIZE - 3, y + SIZE / 2);
-        if (type == '+') {
-            g.drawLine(x + SIZE / 2, y + 2, x + SIZE / 2, y + SIZE - 3);
-        }
-    }
-
-    public int getIconWidth() {
-        return SIZE;
-    }
-
-    public int getIconHeight() {
-        return SIZE;
-    }
+	public static synchronized String getVersion() {
+	    String version = null;
+	    // try to load from maven properties first
+	    try {
+	        Properties p = new Properties();
+	        InputStream is = Main.class.getResourceAsStream("/META-INF/maven/NNU/NNUEdit/pom.properties");
+	        if (is != null) {
+	            p.load(is);
+	            version = p.getProperty("version", "");
+	        }
+	    } catch (Exception e) {}
+	    try {
+	    	// fallback to using Java API
+		    if (version == null) {
+		        Package aPackage = Main.class.getPackage();
+		        if (aPackage != null) {
+		            version = aPackage.getImplementationVersion();
+		            if (version == null) {
+		                version = aPackage.getSpecificationVersion();
+		            }
+		        }
+		    }
+	    } catch (Exception e) {}
+	    if (version == null) {
+	        // we could not compute the version so use a blank
+	        version = "1.2.0";
+	    }
+	    return version;
+	}
+	private static void giveUpInstantly() {
+		System.exit(12);
+	}
 }

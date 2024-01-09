@@ -1,10 +1,14 @@
 package NNU.Editor.Runners;
 
+import java.io.File;
+
 import NNU.Editor.App;
 
 public interface IRunner {
 	public boolean canRun(App app);
 	public void Run(App app);
+	public boolean canRunFile(File f, App app);
+	public void RunFile(File f, App app) throws Exception;
 	
 	public default boolean ValidFileExt(String[] fileext, String s) {
 		if (s==null) return false;
@@ -14,6 +18,7 @@ public interface IRunner {
 		return false;
 	}
 	public default String containsFiles(String[] starterfiles, App app) {
+		
 		for (String fex : starterfiles)
 			if (app.Folder.contains(fex.toLowerCase(), true))
 				return fex;

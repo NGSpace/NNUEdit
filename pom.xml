@@ -6,10 +6,10 @@
   <groupId>NNU</groupId>
   <artifactId>NNUEdit</artifactId>
   <packaging>jar</packaging>
-  <version>1.0</version>
+  <version>1.1.0</version>
 
   <name>NNUEdit</name>
-  <description>Custom Code Editor made by NGS</description>
+  <description>Code editor made by NGS</description>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -18,34 +18,52 @@
   </properties>
 
   <dependencies>
-	<!-- https://mvnrepository.com/artifact/org.eclipse.platform/org.eclipse.swt.gtk.linux.x86_64 ->
+	
+	<!-- https://mvnrepository.com/artifact/org.jclarion/image4j -->
+	<dependency>
+	    <groupId>org.jclarion</groupId>
+	    <artifactId>image4j</artifactId>
+	    <version>0.7</version>
+	</dependency>
+	
+	
+	<!-- linux x86_64, should also be used in universal version to avoid compiler errors. -->
 	<dependency>
 	    <groupId>org.eclipse.platform</groupId>
 	    <artifactId>org.eclipse.swt.gtk.linux.x86_64</artifactId>
-	    <version>3.124.100</version>
-	</dependency->
-	  <!- https://mvnrepository.com/artifact/org.eclipse.swt/org.eclipse.swt.gtk.linux.x86_64 -->
-	<dependency>
-	  <groupId>org.eclipse.swt</groupId>
-	  <artifactId>org.eclipse.swt.win32.win32.x86_64</artifactId>
-	  <version>4.3</version>
-	  <scope>provided</scope>
+	    <version>3.124.200</version>
 	</dependency>
+	
+	
+	<!-- Windows x86_64 -->
+	<!-- https://mvnrepository.com/artifact/org.eclipse.platform/org.eclipse.swt.win32.win32.x86_64 ->
+	<dependency>
+	    <groupId>org.eclipse.platform</groupId>
+	    <artifactId>org.eclipse.swt.win32.win32.x86_64</artifactId>
+	    <version>3.124.200</version>
+	</dependency-->
+	
+	
     <dependency>
-	  <groupId>de.tisoft.rsyntaxtextarea</groupId>
-	  <artifactId>rsyntaxtextarea-antlr4-extension</artifactId>
-	  <version>0.0.3</version>
+	  <groupId>org.sejda.imageio</groupId>
+	  <artifactId>webp-imageio</artifactId>
+	  <version>0.1.6</version>
 	</dependency>
     <dependency>
 		<groupId>com.fifesoft</groupId>
 		<artifactId>autocomplete</artifactId>
 		<version>3.3.1</version>
 	</dependency>
+	<dependency>
+	    <groupId>com.fifesoft</groupId>
+	    <artifactId>rsyntaxtextarea</artifactId>
+	    <version>3.3.4</version>
+	</dependency>
 	<!-- https://mvnrepository.com/artifact/com.formdev/flatlaf -->
 	<dependency>
 	    <groupId>com.formdev</groupId>
 	    <artifactId>flatlaf</artifactId>
-	    <version>3.2</version>
+	    <version>3.2.5</version>
 	</dependency>
 	<!-- https://mvnrepository.com/artifact/com.formdev/flatlaf-extras -->
 	<dependency>
