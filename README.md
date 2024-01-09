@@ -1,7 +1,8 @@
 # NNUEdit
 Custom Code Editor made by NGS using bobbylight's RSyntaxTextArea
 
-Run this with the latest jar file in the bin directory.
+
+![image](https://github.com/NGSpace/NNUEdit/assets/71827944/3d19c2d3-b092-4c56-9101-da3aba3cfe63)
 
 
 > [!NOTE]
