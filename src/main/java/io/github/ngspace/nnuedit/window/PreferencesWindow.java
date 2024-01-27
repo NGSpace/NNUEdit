@@ -1,0 +1,41 @@
+package io.github.ngspace.nnuedit.window;
+
+import javax.swing.JComponent;
+import javax.swing.ScrollPaneConstants;
+
+import io.github.ngspace.nnuedit.App;
+import io.github.ngspace.nnuedit.asset_manager.AssetManager;
+import io.github.ngspace.nnuedit.asset_manager.StringTable;
+import io.github.ngspace.nnuedit.menu.components.NGSScrollPane;
+import io.github.ngspace.nnuedit.menu.components.Tab;
+import io.github.ngspace.nnuedit.menu.prefrences.PreferencesMenu;
+import io.github.ngspace.nnuedit.utils.Utils;
+import io.github.ngspace.nnuedit.window.abstractions.Window;
+
+public class PreferencesWindow implements Window {
+
+	protected PreferencesMenu menu;
+	protected NGSScrollPane sp;
+	protected Tab tab;
+	protected App app;
+	
+	public PreferencesWindow(App app) {
+        this.app = app;
+		this.sp = new NGSScrollPane(getApp());
+		getApp();
+		this.menu = new PreferencesMenu(this);
+		sp.setViewportView(menu);
+        this.tab = new Tab(getApp(), this);
+        sp.getHorizontalScrollBar().setEnabled(true);
+        sp.getVerticalScrollBar().setUnitIncrement(16);
+        sp.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+        tab.setIcon(AssetManager.getIcon("NNUEdit72x72"));
+        app.addRedrawListener((a)->menu.refresh());
+	}
+	
+	@Override public String getTitle() {return StringTable.get("options.title", Utils.EDITORNAME);}
+	@Override public NGSScrollPane getScrollPane() {return sp;}
+	@Override public JComponent getComponent() {return menu;}
+	@Override public Tab getTab() {return tab;}
+	@Override public App getApp() {return app;}
+}

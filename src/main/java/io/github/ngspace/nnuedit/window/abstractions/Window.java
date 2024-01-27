@@ -1,0 +1,39 @@
+package io.github.ngspace.nnuedit.window.abstractions;
+
+import java.awt.Color;
+import java.io.File;
+
+import javax.swing.JComponent;
+
+import io.github.ngspace.nnuedit.App;
+import io.github.ngspace.nnuedit.menu.components.NGSScrollPane;
+import io.github.ngspace.nnuedit.menu.components.Tab;
+import io.github.ngspace.nnuedit.utils.Utils;
+import io.github.ngspace.nnuedit.utils.registry.Registries;
+import io.github.ngspace.nnuedit.window.windowfactorys.IWindowFactory;
+
+public interface Window extends Savable {
+	public static final Color color = new Color(10,10,12);
+
+	public String getTitle();
+	public NGSScrollPane getScrollPane();
+	public JComponent getComponent();
+	public Tab getTab();
+	public App getApp();
+	
+	public default void lostFocus(Window newWindow) {}
+	public default void gainedFocus(Window prevWindow) {}
+	public default boolean isSaved() {return true;}
+	public default boolean Save(boolean ask) {return true;}
+	public default void delete() {}
+	public default boolean closeEvent(Object... Reason) {return true;};
+	
+	public default boolean isEditor() {return false;}
+	public default Editor getEditor() {return null;}
+	public default boolean isOpen(String path) {if (isEditor()) return getEditor().isOpen(path);return false;}
+	public static Window createWindowFromFile(App app, File file) {
+		IWindowFactory w = Registries.WindowFactories.get(Utils.getFileExt(file));
+		if (w==null) w = Registries.WindowFactories.get(Editor.DEFAULT);
+		return w.CreateWindowFromFile(app, file);
+	}
+}
