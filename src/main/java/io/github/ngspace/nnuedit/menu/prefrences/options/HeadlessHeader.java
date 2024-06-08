@@ -5,7 +5,7 @@ public class HeadlessHeader extends Header {
 		this(name, 10, true);
 	}
 	public HeadlessHeader(String name, int size, boolean underline) {
-		super(name, "");
+		super(name);
 		this.size = size;
 		this.underline = underline;
 	}

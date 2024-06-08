@@ -19,8 +19,7 @@ public class ExtensionsTab extends APreferenceTab {
 	public static final Color selectedColor = new Color(10,100,200);
 	public static final Font f = new Font(AOption.FT, Font.BOLD, 40);
 
-	@Override
-	public JComponent getComponentWidth(int width) {
+	@Override public JComponent getComponent(int width) {
 		JPanel options_panel = new JPanel(null, true);
 		options_panel.setOpaque(false);
 		int Y = 0;

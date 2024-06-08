@@ -25,13 +25,13 @@ import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Highlighter;
 
 import io.github.ngspace.nnuedit.asset_manager.StringTable;
-import io.github.ngspace.nnuedit.utils.UserMessager;
+import io.github.ngspace.nnuedit.utils.user_io.UserMessager;
 
 public class FindMenu extends JPanel implements DocumentListener {
 	
 	private static final long serialVersionUID = -3066669034146785706L;
 	protected EditorTextArea txtArea;
-	protected static boolean CaseSensitivity = false;
+	protected boolean CaseSensitivity = false;
 	protected JTextField txtFind;
 	protected String str = "";
 	
@@ -56,7 +56,7 @@ public class FindMenu extends JPanel implements DocumentListener {
 		btnNewButton.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				FindNext(txtFind.getText());
+				findNext(txtFind.getText());
 			}
 		});
 		btnNewButton.setBounds(289, 11, 99, 30);
@@ -76,7 +76,7 @@ public class FindMenu extends JPanel implements DocumentListener {
 		btnReplaceNext.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				ReplaceNext(txtFind.getText(),ReplaceTxt.getText());
+				replaceNext(txtFind.getText(),ReplaceTxt.getText());
 			}
 		});
 		btnReplaceNext.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -99,7 +99,9 @@ public class FindMenu extends JPanel implements DocumentListener {
 		/* Change case sensitivity */
 		JCheckBox chckbxNewCheckBox = new JCheckBox("Aa");
 		chckbxNewCheckBox.addMouseListener(new MouseAdapter() {
-			@Override public void mouseClicked(MouseEvent e) {CaseSensitivity = !CaseSensitivity;}
+			@Override public void mouseClicked(MouseEvent e) {
+				CaseSensitivity = !CaseSensitivity;
+			}
 		});//UserMessager.input("", "input.newfile");
 		chckbxNewCheckBox.setToolTipText(StringTable.get("find.case"));
 		chckbxNewCheckBox.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -154,8 +156,8 @@ public class FindMenu extends JPanel implements DocumentListener {
 
 	public void enterKey() {
 		if (getFocusedComponent()==txtFind) {
-			FindNext(txtFind.getText());
-		} else {ReplaceNext(txtFind.getText(), ReplaceTxt.getText());}
+			findNext(txtFind.getText());
+		} else {replaceNext(txtFind.getText(), ReplaceTxt.getText());}
 	}
 	
 	public void toggle() {
@@ -164,7 +166,7 @@ public class FindMenu extends JPanel implements DocumentListener {
 		} else {txtFind.requestFocus();}
 	}
 	
-	public void FindAll(String searchReq) {
+	public void findAll(String searchReq) {
 		new Thread(() -> {
     	Highlighter.HighlightPainter painter = new DefaultHighlighter.DefaultHighlightPainter
     		(new Color(80,80,0));
@@ -187,7 +189,7 @@ public class FindMenu extends JPanel implements DocumentListener {
 		}).start();
 	}
 	
-	public void FindNext(String searchReq) {
+	public void findNext(String searchReq) {
 		new Thread(() -> {
     	Highlighter.HighlightPainter painter = new DefaultHighlighter.DefaultHighlightPainter
     		(new Color(80,80,0));
@@ -219,7 +221,7 @@ public class FindMenu extends JPanel implements DocumentListener {
 		}).start();
 	}
 	
-	public void ReplaceNext(String searchReq, String Replace) {
+	public void replaceNext(String searchReq, String Replace) {
 		new Thread(() -> {
     	String txt = CaseSensitivity ? txtArea.getText() : txtArea.getText().toLowerCase();
     	String search = CaseSensitivity ? searchReq : searchReq.toLowerCase();
@@ -252,11 +254,11 @@ public class FindMenu extends JPanel implements DocumentListener {
 		return txt.indexOf(search);
 	}
 
-	@Override public void insertUpdate(DocumentEvent e)  {FindAll(txtFind.getText());}
+	@Override public void insertUpdate(DocumentEvent e)  {findAll(txtFind.getText());}
 
-	@Override public void removeUpdate(DocumentEvent e)  {FindAll(txtFind.getText());}
+	@Override public void removeUpdate(DocumentEvent e)  {findAll(txtFind.getText());}
 
-	@Override public void changedUpdate(DocumentEvent e) {FindAll(txtFind.getText());}
+	@Override public void changedUpdate(DocumentEvent e) {findAll(txtFind.getText());}
 }
 
 class XButton extends JButton {

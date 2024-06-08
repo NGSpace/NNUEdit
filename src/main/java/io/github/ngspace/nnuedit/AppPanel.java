@@ -9,28 +9,17 @@ import javax.swing.JPanel;
 
 public class AppPanel extends JPanel {
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 890330040427900164L;
-	
 	public static int RoundedBox = 20;
-	
-	private boolean painting = false;
-	
 	public final App app;
 	
-	public AppPanel(App app) {
-		this.app = app;
-	}
+	public AppPanel(App app) {this.app = app;}
 	
 	@Override public void paint(Graphics gra) {
 		super.paint(gra);
-		if (painting) return;
-		painting = true;
 		if (app.getSelectedWindow()==null||!app.getSelectedWindow().getScrollPane().isVisible()) {
     		Graphics2D g = (Graphics2D) gra;
-    		g.setFont(app.getTipFont());
+    		g.setFont(App.getTipFont());
     		g.setColor(App.MenuFG);
     		
     		App.adjustAntialias(g,true);
@@ -55,6 +44,6 @@ public class AppPanel extends JPanel {
     		
     		g.drawRoundRect(x+keywidth-5, y-strheight+5, ctrlwidth+10, strheight+5, RoundedBox, RoundedBox);
     		
-		}painting = false;
+		}
 	}
 }

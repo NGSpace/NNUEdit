@@ -19,13 +19,13 @@ import io.github.ngspace.nnuedit.asset_manager.AssetManager;
 import io.github.ngspace.nnuedit.asset_manager.StringTable;
 import io.github.ngspace.nnuedit.menu.components.NGSScrollPane;
 import io.github.ngspace.nnuedit.menu.components.Tab;
-import io.github.ngspace.nnuedit.utils.Utils;
 import io.github.ngspace.nnuedit.window.abstractions.Window;
 import io.github.ngspace.nnuedit.window.abstractions.WindowMenu;
 
 public class AboutWindow extends WindowMenu implements Window {
 
 	private static final long serialVersionUID = 6893937793741839803L;
+	public static final String GITHUBURL = "https://github.com/NGSpace/NNUEdit";
 	public final App app;
 
 	protected NGSScrollPane sp;
@@ -39,7 +39,7 @@ public class AboutWindow extends WindowMenu implements Window {
         this.setBackground(Window.color);
         this.setForeground(Color.LIGHT_GRAY);
 		
-		JLabel lblNewLabel = new JLabel(Utils.EDITORNAME);
+		JLabel lblNewLabel = new JLabel(Main.EDITORNAME);
 		lblNewLabel.setForeground(Color.LIGHT_GRAY);
 		lblNewLabel.setFont(new Font("Monospaced", Font.BOLD, 48));
 		lblNewLabel.setHorizontalAlignment(SwingConstants.CENTER);
@@ -63,20 +63,20 @@ public class AboutWindow extends WindowMenu implements Window {
             @Override
             public void mouseClicked(MouseEvent e) {
                 try {
-                	Desktop.getDesktop().browse(new URI("https://github.com/NGSpace/NNUEdit"));
+                	Desktop.getDesktop().browse(new URI(GITHUBURL));
                 } catch (Exception ex) {
                 	ex.printStackTrace();
                 }
             }
         });
 		add(lblGithubPage);
-		JLabel lblVersion = new JLabel(StringTable.get("about.version",Main.Version));
+		JLabel lblVersion = new JLabel(StringTable.get("about.version",Main.VersionInfo.version));
 		lblVersion.setForeground(Color.LIGHT_GRAY);
 		lblVersion.setHorizontalAlignment(SwingConstants.LEFT);
 		lblVersion.setFont(new Font("Courier New", Font.BOLD, 24));
 		lblVersion.setBounds(10, 187, 464, 50);
 		add(lblVersion);
-		JLabel lblSystem = new JLabel(Main.SYSTEM);
+		JLabel lblSystem = new JLabel(System.getProperty("os.name"));
 		lblSystem.setForeground(Color.LIGHT_GRAY);
 		lblSystem.setHorizontalAlignment(SwingConstants.CENTER);
 		lblSystem.setFont(new Font("Courier New", Font.BOLD, 24));
@@ -95,7 +95,7 @@ public class AboutWindow extends WindowMenu implements Window {
         sp.setOpaque(true);
 	}
 
-	@Override public String getTitle() {return StringTable.get("about.title", Utils.EDITORNAME);}
+	@Override public String getTitle() {return StringTable.get("about.title", Main.EDITORNAME);}
 	@Override public NGSScrollPane getScrollPane() {return sp;}
 	@Override public JComponent getComponent() {return this;}
 	@Override public Tab getTab() {return tab;}

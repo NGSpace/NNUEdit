@@ -1,10 +1,9 @@
-package io.github.ngspace.nnuedit.utils;
+package io.github.ngspace.nnuedit.utils.user_io;
 
 import static io.github.ngspace.nnuedit.asset_manager.StringTable.get;
 
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Vector;
 
 import javax.swing.Icon;
 import javax.swing.JComboBox;
@@ -12,6 +11,12 @@ import javax.swing.JDialog;
 import javax.swing.JOptionPane;
 
 public class UserMessager extends JOptionPane {
+
+    public static final int YES = 0;
+    public static final int NO = 1;
+    public static final int CANCEL = 2;
+    public static final int CLOSED = -1;
+	
 	
 	private static final long serialVersionUID = -2519403971515413979L;
 	
@@ -36,7 +41,7 @@ public class UserMessager extends JOptionPane {
 	public static int confirmTB(String title, String text,Object...v) {
 		return confirmDialog(get(text,v), get(title), YES_NO_OPTION);
 	}
-	public static int confirmTB_c(String title, String text,Object...v) {
+	public static int showConfirmAndCancelTB(String title, String text,Object...v) {
 		return confirmDialog(get(text,v), get(title), YES_NO_CANCEL_OPTION);
 	}
 	public static Object inputTB(String v, String text,Object...va) {
@@ -46,13 +51,11 @@ public class UserMessager extends JOptionPane {
 		return input(v,get(title),get(text,va));
 	}
 	public static <T> T comboInput(String title,String text,Map<String, T> map, String initval) {
-		Vector<String> Items = new Vector<String>();
 		String init = initval;
-		for (Entry<String, T> entry: map.entrySet()) {
-			if (entry.getValue().equals(init)) init = entry.getKey();
-			Items.add(entry.getKey());
-		}
-        JComboBox<String> jcy = new JComboBox<String>(Items);
+		String[] items = new String[map.size()];
+		int i = 0;
+		for (Entry<String, T> entry: map.entrySet()) items[i++] = entry.getKey();
+        JComboBox<String> jcy = new JComboBox<String>(items);
         
         UserMessager jop = new UserMessager(title,QUESTION_MESSAGE,DEFAULT_OPTION,null,new String[] {"OK"});
         jcy.setSelectedItem(init);

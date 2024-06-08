@@ -2,5 +2,5 @@ package io.github.ngspace.nnuedit.window.abstractions;
 
 public interface Savable {
 	public boolean isSaved();
-	public boolean Save(boolean ask);
+	public boolean save(boolean ask);
 }

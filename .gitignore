@@ -1,3 +1,8 @@
 target/
-Build/
-RunEnv/
+/.apt_generated/
+/.apt_generated_tests/
+.settings/
+build/buildresults/
+build/jars/
+
+NNUEdit-Upgrade-uuid.txt

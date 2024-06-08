@@ -4,7 +4,6 @@ import java.awt.Color;
 import java.awt.Font;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,8 +15,9 @@ import java.util.Map.Entry;
 import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.github.ngspace.nnuedit.utils.UserMessager;
+import io.github.ngspace.nnuedit.Main;
 import io.github.ngspace.nnuedit.utils.Utils;
+import io.github.ngspace.nnuedit.utils.user_io.UserMessager;
 
 public class Settings {
 	
@@ -63,7 +63,11 @@ public class Settings {
 		} catch (ReadException e) {
 			System.out.println("Corrupted properties file");
 			UserMessager.showErrorDialogTB("err.corruptedsettings.title","err.corruptedsettings",e.line);
-			System.exit(1);
+			Main.crash(1);
+		} catch (IOException e) {
+			System.out.println("Corrupted properties file");
+			UserMessager.showErrorDialogTB("err.corruptedsettings.title","generic.error", e.getMessage());
+			Main.crash(1);
 		}
 	}
 	protected Settings() {}
@@ -79,26 +83,26 @@ public class Settings {
 			return false;
 		}
 	}
-	public void process_s(File file) {
+	public void processSave(File file) {
 		if (file==null) return;
 		try {
 			process(new FileInputStream(file));
-		} catch (FileNotFoundException | ReadException e) {e.printStackTrace();}
+		} catch (IOException e) {e.printStackTrace();}
 	}
 	
-	public void process(File file) throws Exception {
+	public void process(File file) throws IOException {
 		process(new FileInputStream(file));
 	}
 	
-	protected void process(InputStream ins) throws ReadException  {
+	protected void process(InputStream ins) throws IOException {
 		Scanner myReader = new Scanner(ins);
 		ArrayList<String> lines = new ArrayList<String>();
 		while (myReader.hasNextLine())
 			lines.add(myReader.nextLine());
 	    myReader.close();
-	    finalizelist(lines.toArray(new String[0]));
+	    finalizelist(lines.toArray(new String[lines.size()]));
 	}
-	protected void finalizelist(String[] ls) throws ReadException {
+	protected void finalizelist(String[] ls) throws IOException {
 		if (map==null) map = new HashMap<String,Object>();
 		for (int i = 0;i<ls.length;i++) {
 			try {
@@ -123,21 +127,18 @@ public class Settings {
 	public void save() throws IOException {
 		if (file==null&&!b.get()) return;
 		b.set(true);
-		FileWriter fw = new FileWriter(file);
-		for (Entry<String, Object> entry : map.entrySet()) {
-			fw.write(entry.getKey() + "=" + entry.getValue() + "\n");
+		try (FileWriter fw = new FileWriter(file)) {
+			for (Entry<String, Object> entry : map.entrySet()) fw.write(entry.getKey() + "=" + entry.getValue() + "\n");
+		} catch (Exception e) {
+			b.set(false);
+			throw e;
 		}
-		fw.close();
-		b.set(false);
 	}
 	/* Getters */
 	public String get(String key) {
-		String res = null;
 		Object r = map.get(key);
-		if (r instanceof String)
-			res = (String) r;
-		else if (r!=null) res = String.valueOf(r);
-		if (res==null) {
+		String res = r!=null ? r.toString():null;
+		if (r==null) {
 			res = (String) defaults.get(key);
 			if (res!=null) {
 				map.put(key, res);
@@ -159,10 +160,11 @@ public class Settings {
 	
 	public boolean has(String key) {return get(key)!=null;}
 	public boolean getBoolean(String key) {return Boolean.TRUE.equals(Boolean.valueOf(get(key)));}
-	public int getInt(String string) {return Integer.valueOf(get(string).trim().replaceAll("[^\\d]+", ""));}
+	public int getInt(String string) {return Integer.parseInt(get(string).trim());}
+	public double getDouble(String string) {return Double.parseDouble(get(string).trim());}
 	
 	public Font getFont(String str) {
-		return new Font(get(str+".family"), Utils.parseInt(get(str+".style")), Utils.parseInt(get(str+".size")));
+		return new Font(get(str+".family"), Utils.safeParseInt(get(str+".style")),Utils.safeParseInt(get(str+".size")));
 	}
 	public Color getColor(String key) {
 		return new Color(getInt(key+".r"),getInt(key+".g"),getInt(key+".b"),getInt(key+".a"));
@@ -170,46 +172,42 @@ public class Settings {
 	
 	/* Set without triggering event listeners */
 	
-	protected void set_no_event(String key,Object value) {
+	protected void setNoEvent(String key,Object value) {
 		map.put(key, value);
 		try {
 			save();
 		} catch (IOException e) {e.printStackTrace();}
 	}
-	protected void set_no_event(String key,Font f) {
-		set_no_event(key+".family", f.getFamily());
-		set_no_event(key+".size"  , f.getSize  ());
-		set_no_event(key+".style" , f.getStyle ());
+	protected void setNoEvent(String key,Font f) {
+		setNoEvent(key+".family", f.getFamily());
+		setNoEvent(key+".size"  , f.getSize  ());
+		setNoEvent(key+".style" , f.getStyle ());
 	}
-	protected void set_no_event(String key,Color f) {
-		set_no_event(key+".r", f.getRed  ());
-		set_no_event(key+".g", f.getGreen());
-		set_no_event(key+".b", f.getBlue ());
-		set_no_event(key+".a", f.getAlpha());
+	protected void setNoEvent(String key,Color f) {
+		setNoEvent(key+".r", f.getRed  ());
+		setNoEvent(key+".g", f.getGreen());
+		setNoEvent(key+".b", f.getBlue ());
+		setNoEvent(key+".a", f.getAlpha());
 	}
 	
 	/* Set WITH triggering event listeners */
 	
 	public void set(String key,Object value) {
 		Object oldval = null;
-		try {oldval = get(key);} catch (Exception e) {}
-		set_no_event(key, value);
+		try {oldval = get(key);}      catch (Exception e) {e.printStackTrace();}
+		setNoEvent(key, value);
 		dispatchChangedValueEvents(key, value, oldval);
 	}
 	public void set(String key, Font value) {
 		Object oldval = null;
-		try {
-			oldval = getFont(key);
-		} catch (Exception e) {}
-		set_no_event(key, value);
+		try {oldval = getFont(key);}  catch (Exception e) {e.printStackTrace();}
+		setNoEvent(key, value);
 		dispatchChangedValueEvents(key, value, oldval);
 	}
 	public void set(String key,Color value) {
 		Object oldval = null;
-		try {
-			oldval = getColor(key);
-		} catch (Exception e) {}
-		set_no_event(key, value);
+		try {oldval = getColor(key);} catch (Exception e) {e.printStackTrace();}
+		setNoEvent(key, value);
 		dispatchChangedValueEvents(key, value, oldval);
 	}
 	

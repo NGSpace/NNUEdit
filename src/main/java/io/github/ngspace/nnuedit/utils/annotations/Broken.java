@@ -1,4 +1,4 @@
-package io.github.ngspace.nnuedit.utils;
+package io.github.ngspace.nnuedit.utils.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -6,6 +6,5 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 @Target({ElementType.METHOD, ElementType.FIELD})
-@Retention(RetentionPolicy.SOURCE)
-public @interface Broken {
-}
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Broken {}

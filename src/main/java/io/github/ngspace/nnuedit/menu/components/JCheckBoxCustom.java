@@ -13,11 +13,8 @@ import javax.swing.JCheckBox;
  */
 public class JCheckBoxCustom extends JCheckBox {
 
-    /**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
-	private static final int border = 4;
+	private static final int BORDER = 4;
 
     public JCheckBoxCustom() {
         setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -37,17 +34,17 @@ public class JCheckBoxCustom extends JCheckBox {
             } else {
                 g2.setColor(Color.GRAY);
             }
-            g2.fillRoundRect(1, ly, 16, 16, border, border);
+            g2.fillRoundRect(1, ly, 16, 16, BORDER, BORDER);
             //  Draw Check icon
-            int px[] = {4, 8, 14, 12, 8, 6};
-            int py[] = {ly + 8, ly + 14, ly + 5, ly + 3, ly + 10, ly + 6};
+            int[] px = {4, 8, 14, 12, 8, 6};
+            int[] py = {ly + 8, ly + 14, ly + 5, ly + 3, ly + 10, ly + 6};
             g2.setColor(Color.RED);
             g2.fillPolygon(px, py, px.length);
         } else {
             g2.setColor(Color.GRAY);
-            g2.fillRoundRect(1, ly, 16, 16, border, border);
+            g2.fillRoundRect(1, ly, 16, 16, BORDER, BORDER);
             g2.setColor(Color.WHITE);
-            g2.fillRoundRect(2, ly + 1, 14, 14, border, border);
+            g2.fillRoundRect(2, ly + 1, 14, 14, BORDER, BORDER);
         }
         g2.dispose();
     }

@@ -2,9 +2,9 @@ package io.github.ngspace.nnuedit.menu;
 
 import static io.github.ngspace.nnuedit.asset_manager.AssetManager.fileext;
 import static io.github.ngspace.nnuedit.asset_manager.StringTable.get;
-import static io.github.ngspace.nnuedit.utils.UserMessager.confirmTB_c;
-import static io.github.ngspace.nnuedit.utils.UserMessager.inputTB;
-import static io.github.ngspace.nnuedit.utils.UserMessager.showErrorDialogTB;
+import static io.github.ngspace.nnuedit.utils.user_io.UserMessager.inputTB;
+import static io.github.ngspace.nnuedit.utils.user_io.UserMessager.showConfirmAndCancelTB;
+import static io.github.ngspace.nnuedit.utils.user_io.UserMessager.showErrorDialogTB;
 import static javax.swing.JOptionPane.CANCEL_OPTION;
 import static javax.swing.JOptionPane.NO_OPTION;
 import static javax.swing.JOptionPane.YES_OPTION;
@@ -59,8 +59,10 @@ import io.github.ngspace.nnuedit.App;
 import io.github.ngspace.nnuedit.Main;
 import io.github.ngspace.nnuedit.asset_manager.AssetManager;
 import io.github.ngspace.nnuedit.menu.components.NGSScrollPane;
-import io.github.ngspace.nnuedit.utils.SmartGraphics2D;
+import io.github.ngspace.nnuedit.utils.FileIO;
 import io.github.ngspace.nnuedit.utils.Utils;
+import io.github.ngspace.nnuedit.utils.ui.SmartGraphics2D;
+import io.github.ngspace.nnuedit.utils.user_io.UserMessager;
 import io.github.ngspace.nnuedit.window.abstractions.Editor;
 import io.github.ngspace.nnuedit.window.abstractions.Savable;
 import io.github.ngspace.nnuedit.window.abstractions.Window;
@@ -69,7 +71,6 @@ public class EditorTextArea extends RSyntaxTextArea implements DocumentListener,
 
 	private static final long serialVersionUID = 4557978198642746316L;
 	
-//	public SyntaxScheme snxsc;
 	private String FilePath = "";
 	private static String tx = "text/";
 	private static String syn = "editor.syntax";
@@ -175,15 +176,15 @@ public class EditorTextArea extends RSyntaxTextArea implements DocumentListener,
 				((JMenuItem) (((JMenu) jpm.getComponent(i)).getMenuComponents()[3]))
 				.setText(get("editor.folding.expandallfolds"));
 			}
-			@Override public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {}
-			@Override public void popupMenuCanceled(PopupMenuEvent e) {}
+			@Override public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {/**/}
+			@Override public void popupMenuCanceled(PopupMenuEvent e) {/**/}
 		});
         
         ((ConfigurableCaret) this.getCaret()).setBlinkRate(0);
         
         JScrollPane sp = window.getScrollPane();
-        sp.getHorizontalScrollBar().addAdjustmentListener(e -> Resize());
-        sp.getVerticalScrollBar().addAdjustmentListener(e -> Resize());
+        sp.getHorizontalScrollBar().addAdjustmentListener(e -> resize());
+        sp.getVerticalScrollBar().addAdjustmentListener(e -> resize());
         
 
         DropTargetListener myDragDropListener = new DropTargetAdapter() {
@@ -218,7 +219,7 @@ public class EditorTextArea extends RSyntaxTextArea implements DocumentListener,
 		return super.getPopupMenu();
 	}
 	
-	public void Resize() {
+	public void resize() {
         JScrollPane sp = window.getScrollPane();
 		Point position = sp.getViewport().getViewPosition();
 		JScrollBar vsb = sp.getVerticalScrollBar();
@@ -261,7 +262,7 @@ public class EditorTextArea extends RSyntaxTextArea implements DocumentListener,
 		if (fm==null) {
 	    	fm = new FindMenu(this);
 	    	this.add(fm);
-	    	Resize();
+	    	resize();
 		}
 		fm.getComponents()[0].requestFocus();
 	}
@@ -284,26 +285,24 @@ public class EditorTextArea extends RSyntaxTextArea implements DocumentListener,
 	public void openfile(boolean load, boolean save) {
 		String res = "";
 		while ("".equals(res)) {
-			res = Utils.openFileDialog(save);
+			res = FileIO.openFileDialog(save);
 	        if(res != null&&!"/".equals(res.trim()) && !res.trim().isEmpty()) {
 	            try {
 					File f = new File(res);
-					if (!f.exists() && !f.createNewFile())
-							throw new Exception("Can't create file");
+					if (!f.exists() && !f.createNewFile()) throw new IOException("Can't create file");
 					if ("".equals(res)) {
 						showErrorDialogTB("err.readfile.title", "err.readfile.empty");
 						continue;
 					}
 					setFilePath(res);
 					if (load) {
-						setText(Utils.read(res));
+						setText(FileIO.read(new File(res)));
 				        setCaretPosition(0);
 						revalidate();
 						app.repaint();
 					}
 				} catch (Exception e) {
-					showErrorDialogTB
-						("err.readfile.title","err.readfile.exception",e.getMessage());
+					showErrorDialogTB("err.readfile.title","err.readfile.exception",e.getMessage());
 					e.printStackTrace();
 				}
 	        } else {
@@ -312,21 +311,23 @@ public class EditorTextArea extends RSyntaxTextArea implements DocumentListener,
 		}
 	}
 	
-	public boolean Save(boolean ask) {
+	public boolean save(boolean ask) {
 		if (isSaved()) return true;
 		int result = 0;
-		if (ask)
-			result = confirmTB_c("confirm.save","confirm.save");
-    	if (result==CANCEL_OPTION)
-    		return false;
-    	if (result==YES_OPTION&&"".equals(this.getFilePath())) {
-    		this.openfile(false, true);
-    	}
-    	if (result==NO_OPTION)
-    		return true;
+		if (ask) result = showConfirmAndCancelTB("confirm.save","confirm.save");
+    	if (result==CANCEL_OPTION) return false;
+    	if (result==YES_OPTION&&"".equals(this.getFilePath())) this.openfile(false, true);
+    	if (result==NO_OPTION) return true;
 		if ("".equals(this.getFilePath())) return false;
 		setSaved(true);
-		return Utils.save(this.getFilePath(), this.getText());
+		try {
+			FileIO.save(new File(this.getFilePath()), this.getText());
+			return true;
+		} catch (IOException e) {
+			e.printStackTrace();
+			UserMessager.showErrorDialogTB("prop.cannotsave.title","prop.cannotsave",e.getLocalizedMessage());
+			return false;
+		}
 	}
 	
 	/**
@@ -352,7 +353,7 @@ public class EditorTextArea extends RSyntaxTextArea implements DocumentListener,
 	synchronized void setb(boolean b){this.b = b;}
     public void insertUpdate(DocumentEvent e) {updateLog();}
     public void removeUpdate(DocumentEvent e) {updateLog();}
-    public void changedUpdate(DocumentEvent e) {}
+    public void changedUpdate(DocumentEvent e) {/**/}
 
     public void updateLog() {
     	setSaved(false);

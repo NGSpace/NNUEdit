@@ -16,7 +16,7 @@ import javax.swing.JButton;
 
 import io.github.ngspace.nnuedit.App;
 import io.github.ngspace.nnuedit.Main;
-import io.github.ngspace.nnuedit.utils.Utils;
+import io.github.ngspace.nnuedit.utils.ImageUtils;
 import io.github.ngspace.nnuedit.window.abstractions.Window;
 
 public class Tab extends JButton implements MouseListener, MouseMotionListener {
@@ -38,7 +38,7 @@ public class Tab extends JButton implements MouseListener, MouseMotionListener {
 		this.app = app;
 		this.window = window;
 		this.setOpaque(true);
-		this.setBackground(App.MenuBG);
+		this.setBackground(app.MenuBG);
 		this.setLayout(null);
 		this.addMouseListener(this);
 		this.addMouseMotionListener(this);
@@ -49,7 +49,7 @@ public class Tab extends JButton implements MouseListener, MouseMotionListener {
 		try {if (app!=null) return Main.settings.getFont("tab.font");} catch (Exception e) {e.printStackTrace();}
 		return new Font("Arial", Font.BOLD, 20);
 	}
-	@Override public void setIcon(Icon i) {super.setIcon(Utils.ResizeIcon(i, 40, 40));}
+	@Override public void setIcon(Icon i) {super.setIcon(ImageUtils.resizeIcon(i, 40, 40));}
 
 	@Override
 	public void paint(Graphics gra) {
@@ -58,13 +58,13 @@ public class Tab extends JButton implements MouseListener, MouseMotionListener {
 		/* Draw background */
 		
 		Graphics2D g = (Graphics2D) gra;
-		g.setColor(app.contentpane.getBackground());
+		g.setColor(app.pane.getBackground());
 		g.fillRect(0, 0, getWidth(), getHeight());
 		g.setColor(app.getSelectedWindow()==window ?
-				window.getComponent().getBackground() : App.MenuBG);
+				window.getComponent().getBackground() : app.MenuBG);
 		App.adjustAntialias(g,false);
 		g.fillRoundRect(padding, 0, getWidth() - padding * 2, getHeight()*2, 30, 30);
-		g.setColor(App.MenuBG.darker().darker());
+		g.setColor(app.MenuBG.darker().darker());
 		
 		/* Draw title */
 		String str = window.getTitle();
@@ -103,13 +103,6 @@ public class Tab extends JButton implements MouseListener, MouseMotionListener {
 			getIcon().paintIcon(this, g, 10, 5);
 		}
 	}
-	public Font scaleFont(String text, Rectangle rect, Graphics g, Font font) {
-		float fontSize = 20;//font.getSize2D();
-		Font font1 = g.getFont().deriveFont(fontSize);
-		int width = g.getFontMetrics(font1).stringWidth(text);
-		fontSize = (float) ((rect.width / (double) width ) * fontSize);
-		return g.getFont().deriveFont(fontSize);
-	}
 	
 	public boolean isOnX(int x, int y) {
 		if (rect==null) return false;
@@ -124,14 +117,13 @@ public class Tab extends JButton implements MouseListener, MouseMotionListener {
 			app.setSelectedWindow(this.window);
 		}
 	}
-	@Override public void mousePressed(MouseEvent e) {}
-	@Override public void mouseReleased(MouseEvent e) {}
-	@Override public void mouseEntered(MouseEvent e) {if (!showX) {showX = true;repaint();}}//{}
-	@Override public void mouseExited(MouseEvent e) {if (showX) {showX = false;repaint();}}
-	@Override public void mouseDragged(MouseEvent e) {}
-
-	@Override
-	public void mouseMoved(MouseEvent e) {
+	@Override public void mousePressed (MouseEvent e) {/**/}
+	@Override public void mouseReleased(MouseEvent e) {/**/}
+	@Override public void mouseEntered (MouseEvent e) {if (!showX) {showX = true;repaint();}}//{}
+	@Override public void mouseExited  (MouseEvent e) {if (showX) {showX = false;repaint();}}
+	@Override public void mouseDragged (MouseEvent e) {/**/}
+	
+	@Override public void mouseMoved(MouseEvent e) {
 		if (rect==null) return;
 		if (rect.intersects(new Rectangle(e.getX(),e.getY(),1,1))) {
 			if (!highlightX) {

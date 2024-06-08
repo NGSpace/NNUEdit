@@ -20,6 +20,11 @@ import javax.swing.text.JTextComponent;
 import io.github.ngspace.nnuedit.Main;
 import io.github.ngspace.nnuedit.menu.components.SmartJLabel;
 
+/**
+ * There is no reason for this to be deprecated, I just don't want to update it to use the new WidgetOption class...
+ * @deprecated
+ */
+@Deprecated(forRemoval = false, since = "1.4.3")
 public class IntOption extends AOption {
 
 	public IntOption(String name, String key) {super(name, key);}
@@ -29,7 +34,7 @@ public class IntOption extends AOption {
 		panel = new JPanel(null);
 		panel.setOpaque(false);
 		FocusAdapter listener = new FocusAdapter() {
-			public void Click(FocusEvent e) {
+			public void click(FocusEvent e) {
 				Document d = ((JTextComponent)e.getComponent()).getDocument();
 				try {
 					int value = Integer.parseInt
@@ -37,7 +42,7 @@ public class IntOption extends AOption {
 					Main.settings.set(key, value);
 				} catch (NumberFormatException | BadLocationException e1) {e1.printStackTrace();}
 			}
-			@Override public void focusLost(FocusEvent e) {Click(e);}
+			@Override public void focusLost(FocusEvent e) {click(e);}
 		};
 		SmartJLabel jlb = new SmartJLabel();
 		jlb.setFont(f);
@@ -68,13 +73,5 @@ public class IntOption extends AOption {
 		jls.setLocation(width/2 + TEXT_SPACING * 2, (panel.getHeight()-jls.getHeight())/2);
 		panel.add(jls);
 		return panel;
-	}
-
-	@Override
-	public AOption create(String name, String key) {
-		return new IntOption(name, key);
-	}
-	public static AOption build(String name, String key) {
-		return new IntOption(name, key);
 	}
 }

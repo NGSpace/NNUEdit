@@ -1,4 +1,4 @@
-package io.github.ngspace.nnuedit.utils;
+package io.github.ngspace.nnuedit.utils.ui;
 
 import java.awt.Color;
 import java.awt.Composite;
@@ -331,25 +331,37 @@ public class SmartGraphics2D extends Graphics2D {
 	}
 
 	@Override
-	public void drawOval(int x, int y, int width, int height) {}
+	public void drawOval(int x, int y, int width, int height) {
+		if (isInside(x, y, width, height))
+			g.drawOval(x, y, width, height);
+	}
 
 	@Override
-	public void fillOval(int x, int y, int width, int height) {}
+	public void fillOval(int x, int y, int width, int height) {
+		if (isInside(x, y, width, height))
+			g.fillOval(x, y, width, height);
+	}
 
 	@Override
-	public void drawArc(int x, int y, int width, int height, int startAngle, int arcAngle) {}
+	public void drawArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
+		if (isInside(x, y, width, height))
+			g.drawArc(x, y, width, height, startAngle, arcAngle);
+	}
 
 	@Override
-	public void fillArc(int x, int y, int width, int height, int startAngle, int arcAngle) {}
+	public void fillArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
+		if (isInside(x, y, width, height))
+			g.fillArc(x, y, width, height, startAngle, arcAngle);
+	}
 
 	@Override
-	public void drawPolyline(int[] xPoints, int[] yPoints, int nPoints) {}
+	public void drawPolyline(int[] xPoints, int[] yPoints, int nPoints) {/**/}
 
 	@Override
-	public void drawPolygon(int[] xPoints, int[] yPoints, int nPoints) {}
+	public void drawPolygon(int[] xPoints, int[] yPoints, int nPoints) {/**/}
 
 	@Override
-	public void fillPolygon(int[] xPoints, int[] yPoints, int nPoints) {}
+	public void fillPolygon(int[] xPoints, int[] yPoints, int nPoints) {/**/}
 
 	@Override
 	public boolean drawImage(Image img, int x, int y, ImageObserver observer) {

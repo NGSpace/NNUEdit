@@ -16,8 +16,7 @@ public class Header extends AOption {
 	public List<AOption> components = new ArrayList<AOption>();
 	public int size;
 	public boolean underline;
-	protected Header(String name, String key) {super(name, key);}
-	public Header(String name) {this(name, "");size =10;underline = true;components.add(this);}
+	public Header(String name) {super(name, "");size =10;underline = true;components.add(this);}
 	@Override public JComponent getComponentWidth(int width) {
 		panel = new JPanel(null); panel.setOpaque(false);
 		SmartJLabel jlb = new SmartJLabel();
@@ -31,7 +30,6 @@ public class Header extends AOption {
 		return panel;
 	}
 	public void addPrefrence(AOption factory) {components.add(factory);}
-	@Override public AOption create(String name, String key) {return new Header(name);}
 	public List<AOption> getComponents() {return components;}
 	public int getSize() {return size;}
 	public boolean isUnderline() {return underline;}

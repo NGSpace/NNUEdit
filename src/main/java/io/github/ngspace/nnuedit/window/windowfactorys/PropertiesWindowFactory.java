@@ -7,7 +7,5 @@ import io.github.ngspace.nnuedit.window.PropertiesWindow;
 import io.github.ngspace.nnuedit.window.abstractions.Window;
 
 public class PropertiesWindowFactory implements IWindowFactory {
-	@Override public Window CreateWindowFromFile(App app, File file) {
-		return new PropertiesWindow(app, file);
-	}
+	@Override public Window createWindowFromFile(App app, File file) {return new PropertiesWindow(app, file);}
 }

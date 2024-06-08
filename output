@@ -1,0 +1,20 @@
+io.github.ngspace.nnuedit.utils.testing.tests.Tests$AppTest
+io.github.ngspace.nnuedit.utils.testing.tests.Tests$AssetLoadingTest
+io.github.ngspace.nnuedit.utils.testing.tests.Tests$ExtensionsTest
+io.github.ngspace.nnuedit.utils.testing.tests.Tests$SettingsTest
+[0;30m[4;30m[42mTests$SettingsTest: Passed, 1/1[0m
+[0;30m[4;30m[42mTests$AssetLoadingTest: Passed, 25/25[0m
+Loading following Extensions from D:\Projects\NNU\NNUEdit\target\NNUEdit\Extensions:
+Files loaded: []
+[0;30m[4;30m[42mTests$ExtensionsTest: Passed, 1/1[0m
+[0;30m[4;30m[42mTests$AppTest: Passed, 1/1[0m
+
+
+
+
+[0;30m[4;30m[47m
+Printing final results table: 
+[0;30m[4;30m[42mTests$SettingsTest: Passed, 1/1[0m
+[0;30m[4;30m[42mTests$AssetLoadingTest: Passed, 25/25[0m
+[0;30m[4;30m[42mTests$ExtensionsTest: Passed, 1/1[0m
+[0;30m[4;30m[42mTests$AppTest: Passed, 1/1[0m

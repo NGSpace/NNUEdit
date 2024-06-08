@@ -4,30 +4,30 @@ import javax.swing.JComponent;
 
 import io.github.ngspace.nnuedit.App;
 
-public abstract class Extension {public Extension() {}
+public abstract class Extension {protected Extension() {}
 	/**
 	 * Will be executed After Settings and StringTable loaded
 	 */
-	public void LoadExtension() {}
+	public void loadExtension() {}
 	/**
 	 * Will be executed when the jvm closes
 	 */
-	public void UnloadExtension() {}
+	public void unloadExtension() {}
 	/**
 	 * Ran when App starts Loading
 	 * @param app
 	 */
-	public void PreLoadApplication(App app) {}
+	public void preLoadApplication(App app) {}
 	/**
 	 * Ran after App finished Loading
 	 * @param app
 	 */
-	public abstract void LoadApplication(App app);
+	public abstract void loadApplication(App app);
 	/**
 	 * Ran when app is closed
 	 * @param app
 	 */
-	public abstract void UnloadApplication(App app);
+	public abstract void unloadApplication(App app);
 	/**
 	 * will build the component that will show up in the Extension tab to represent the extension
 	 * @param width - the width of the window

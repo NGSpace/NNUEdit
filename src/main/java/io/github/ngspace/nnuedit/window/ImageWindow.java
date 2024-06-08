@@ -12,7 +12,7 @@ import io.github.ngspace.nnuedit.App;
 import io.github.ngspace.nnuedit.asset_manager.AssetManager;
 import io.github.ngspace.nnuedit.menu.components.NGSScrollPane;
 import io.github.ngspace.nnuedit.menu.components.Tab;
-import io.github.ngspace.nnuedit.utils.Utils;
+import io.github.ngspace.nnuedit.utils.ImageUtils;
 import io.github.ngspace.nnuedit.window.abstractions.Window;
 import io.github.ngspace.nnuedit.window.abstractions.WindowMenu;
 
@@ -34,7 +34,7 @@ public class ImageWindow extends WindowMenu implements Window {
 		
 		this.app = app;
 		try {
-			this.img = Utils.readImageFromFile(f);
+			this.img = ImageUtils.readImageFromFile(f);
 			setLayout(null);
 	        setBackground(Window.color);
 	        setForeground(Color.LIGHT_GRAY);
@@ -57,7 +57,7 @@ public class ImageWindow extends WindowMenu implements Window {
 		g.setColor(getBackground());
 		g.fillRect(0, 0, getWidth(), getHeight());
 		
-		g.drawImage(img, 0 + App.getBuffer(), 0,(int) img.getWidth(),(int) img.getHeight(), null);
+		g.drawImage(img, 0 + App.getBuffer(), 0, img.getWidth(), img.getHeight(), null);
 	}
 	@Override public String getTitle() {return title;}
 	@Override public NGSScrollPane getScrollPane() {return sp;}

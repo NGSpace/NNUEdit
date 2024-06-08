@@ -8,7 +8,7 @@ import java.awt.Image;
 import javax.swing.Icon;
 import javax.swing.JButton;
 
-import io.github.ngspace.nnuedit.utils.Utils;
+import io.github.ngspace.nnuedit.utils.ImageUtils;
 
 public class IconButton extends JButton {
 	
@@ -21,19 +21,23 @@ public class IconButton extends JButton {
 		setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		setBorderPainted(false);
 	}
-	@Override
-	public void setIcon(Icon icon) {
+	
+	
+	
+	@Override public void setIcon(Icon icon) {
 		super.setIcon(icon);
 		if (icon!=null&&getWidth()!=0&&getHeight()!=0)
-			image = Utils.iconToImage(Utils.ResizeIcon(icon,getWidth(),getHeight()));
+			image = ImageUtils.iconToImage(ImageUtils.resizeIcon(icon,getWidth(),getHeight()));
 	}
-	@Override
-	public void paintComponent(Graphics gra) {
+	
+	@Override public void paintComponent(Graphics gra) {
 		Graphics2D g = (Graphics2D) gra;
 		g.drawImage(image, 0, 0, getWidth(), getHeight(), null);
 	}
-	@Override
-	public void setBounds(int x, int y, int width, int height) {
+	
+	
+	
+	@Override public void setBounds(int x, int y, int width, int height) {
 		super.setBounds(x, y, width, height);
 		setIcon(getIcon());
 	}
