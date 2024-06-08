@@ -15,8 +15,8 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
-import io.github.ngspace.nnuedit.utils.UserMessager;
-import io.github.ngspace.nnuedit.utils.Utils;
+import io.github.ngspace.nnuedit.utils.FileIO;
+import io.github.ngspace.nnuedit.utils.user_io.UserMessager;
 
 public class FolderTransferHandler extends TransferHandler {
 	private static final long serialVersionUID = -1572114826273900103L;
@@ -180,22 +180,21 @@ public class FolderTransferHandler extends TransferHandler {
         DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
         // Configure for drop mode.
         int index = childIndex;    // DropMode.INSERT
-        if(childIndex == -1) {     // DropMode.ON
-            index = parent.getChildCount();
-        }
+        if(childIndex == -1) index = parent.getChildCount(); // DropMode.ON
         if (!new File(parent.toString()).isDirectory()) return false;
         // Add data to model.
-        for(int i = 0; i < nodes.length; i++) {
-        	
-        	File f = new File(nodes[i].toString());
-        	if (!f.renameTo(new File(parent.toString() + 
-        			File.separatorChar + Utils.getFileName(nodes[i].toString())))) {
-        		UserMessager.showErrorDialogTB("err.movefile.title", "err.movefile");
-        		return false;
-        	}
-        }
-        for(int i = 0; i < nodes.length; i++) {
-        	model.insertNodeInto(nodes[i], parent, index++);
+        if (nodes!=null) {
+	        for(int i = 0; i < nodes.length; i++) {
+	        	
+	        	File f = new File(nodes[i].toString());
+	        	if(!f.renameTo(new File(parent.toString()+File.separatorChar+FileIO.getFileName(nodes[i].toString())))){
+	        		UserMessager.showErrorDialogTB("err.movefile.title", "err.movefile");
+	        		return false;
+	        	}
+	        }
+	        for(int i = 0; i < nodes.length; i++) {
+	        	model.insertNodeInto(nodes[i], parent, index++);
+	        }
         }
         return true;
     }

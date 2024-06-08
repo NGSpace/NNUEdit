@@ -1,11 +1,12 @@
 package io.github.ngspace.nnuedit.runner;
 
 import java.io.File;
+import java.io.IOException;
 
 import io.github.ngspace.nnuedit.App;
 import io.github.ngspace.nnuedit.Main;
 import io.github.ngspace.nnuedit.menu.EditorTextArea;
-import io.github.ngspace.nnuedit.utils.UserMessager;
+import io.github.ngspace.nnuedit.utils.user_io.UserMessager;
 import io.github.ngspace.nnuedit.window.abstractions.Window;
 
 public class ShellRunner implements IRunner {
@@ -18,34 +19,30 @@ public class ShellRunner implements IRunner {
 	
 	public ShellRunner() {
 		int i = 0;
-		for (String fex : FileExtentions) {
-			for (String fn : FileNames) {
-				getStarterFiles()[i] = fn + '.' + fex;
-				i++;
-			}
-		}
+		for (String fex : FileExtentions)
+			for (String fn : FileNames)
+				getStarterFiles()[i++] = fn + '.' + fex;
 	}
 
 	@Override
 	public boolean canRun(App app) {
 		Window selwin = app.getSelectedWindow();
-		return (selwin!=null&&(selwin.getComponent() instanceof EditorTextArea
-				&&ValidFileExt(FileExtentions,((EditorTextArea)selwin.getComponent()).getFilePath())))
-				||containsFiles(getStarterFiles(),app)!=null;
+		return (selwin!=null&&(selwin.getComponent() instanceof EditorTextArea tx
+				&&validFileExt(FileExtentions,tx.getFilePath())))||containsFiles(getStarterFiles(),app)!=null;
 	}
 
 	@Override
-	public void Run(App app) {
+	public void run(App app) {
 		try {
 			Window w = app.getSelectedWindow();
 			
 			EditorTextArea tx = w != null ? ((EditorTextArea)w.getComponent()) : null;
 			String filetoopen = tx != null ? tx.getFilePath() : null;
-			if (!ValidFileExt(FileExtentions, filetoopen)) filetoopen =
+			if (!validFileExt(FileExtentions, filetoopen)) filetoopen =
 				app.Folder.getFolderPath() + File.separatorChar + containsFiles(getStarterFiles(),app);
 			String command = filetoopen;
 			command = slashify(command);
-			RunFile(new File(command), app);
+			runFile(new File(command), app);
 		} catch (Exception e) {
 			e.printStackTrace();
 			UserMessager.showErrorDialogTB("runner.shell.err.title","runner.shell.err",e.getLocalizedMessage());
@@ -53,11 +50,10 @@ public class ShellRunner implements IRunner {
 	}
 
 	@Override
-	public void RunFile(File f, App app) throws Exception {
+	public void runFile(File f, App app) throws IOException {
 		/* Can't use Main.SYSTEM because universal might be used on a windows device */
 		if (System.getProperty("os.name").toLowerCase().contains("windows")) {
-			ProcessBuilder pb = new ProcessBuilder("cmd","/c", "start cmd /c \""+ f.getPath()+
-					   shouldPause() + "\"");
+			ProcessBuilder pb = new ProcessBuilder("cmd", "/c", "start cmd /c \"" + f.getPath() + shouldPause() + "\"");
 			pb.directory(new File(app.Folder.getFolderPath()));
 			pb.start();
 		} else {
@@ -67,12 +63,7 @@ public class ShellRunner implements IRunner {
 		}
 	}
 	
-	private String shouldPause() {
-		return (Main.settings.getBoolean("pauseaftershellrun") ? " & pause" : "");
-	}
+	private String shouldPause() {return (Main.settings.getBoolean("pauseaftershellrun") ? " & pause" : "");}
 
-	@Override
-	public boolean canRunFile(File f, App app) {
-		return ValidFileExt(FileExtentions,(f.getPath()));
-	}
+	@Override public boolean canRunFile(File f, App app) {return validFileExt(FileExtentions,(f.getPath()));}
 }

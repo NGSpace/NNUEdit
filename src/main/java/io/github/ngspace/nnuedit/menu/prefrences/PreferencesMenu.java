@@ -31,7 +31,8 @@ public class PreferencesMenu extends WindowMenu {
 	
 	private static final long serialVersionUID = 5027581198213070489L;
 	
-	APreferenceTab tab = null;
+	APreferenceTab selectedTab = null;
+	
 	/**
 	 * Didn't give enough fucks to make an actual fix so <code>j</code> it is!
 	 */
@@ -50,7 +51,7 @@ public class PreferencesMenu extends WindowMenu {
 	 */
 	public PreferencesMenu(Window window, APreferenceTab tab) {
 		super(window);
-		this.tab = tab;
+		this.selectedTab = tab;
 		setOpaque(true);
 		setBackground(Window.color);
 		setForeground(Color.white.darker());
@@ -59,6 +60,7 @@ public class PreferencesMenu extends WindowMenu {
 		setLayout(null);
 		
 		Main.settings.addRefreshListener(s->refresh());
+		window.getApp().addRedrawListener(a->refresh());
 	}
 	
 	/**
@@ -70,39 +72,50 @@ public class PreferencesMenu extends WindowMenu {
 	 * This is all because of my inability to think into the future.<br>
 	 */
 	public void refresh() {
-		Main.settings.process_s(Main.settings.getFile());
+		Main.settings.processSave(Main.settings.getFile());
 		
-		removeAll();int txtwidth = 0;FontMetrics fm=getFontMetrics(f);
+		removeAll();
 		
-		for (int i = 0;i<PreferencesTabs.size();i++)
-			txtwidth+=fm.stringWidth(PreferencesTabs.get(i).getName())+BUTTON_SPACING;
+		int txtwidth = 0;
+		FontMetrics fm=getFontMetrics(f);
+		
+		for (APreferenceTab tab : PreferencesTabs) txtwidth+=fm.stringWidth(tab.getName())+BUTTON_SPACING;
+		
 		txtwidth+=BUTTON_SPACING;
-		int pw = -(txtwidth/2);
-		for (APreferenceTab s : PreferencesTabs) {
-			String sn = s.getName();
-			pw+=fm.stringWidth(sn)+BUTTON_SPACING;
+		int tabLocation = -(txtwidth/2);
+		for (APreferenceTab tab : PreferencesTabs) {
+			String sn = tab.getName();
+			tabLocation+=fm.stringWidth(sn)+BUTTON_SPACING;
 			SmartJLabel text = new SmartJLabel(sn);
-			text.setBounds(getWidth()/2-pw-20, 0, fm.stringWidth(sn)+40, BUTTONS_HEIGHT);
-			text.setFont(f);text.setUnderlineEnabled(true);
+			
+			text.setBounds(getWidth()/2-tabLocation-20, 0, fm.stringWidth(sn)+40, BUTTONS_HEIGHT);
+			text.setFont(f);
+			text.setUnderlineEnabled(true);
 			text.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+			
 			text.addMouseListener(new MouseAdapter() {
-				@Override public void mouseClicked(MouseEvent e) {j=true;tab = s;refresh();}
+				@Override public void mouseClicked(MouseEvent e) {j=true;selectedTab = tab;refresh();}
 				@Override public void mouseEntered(MouseEvent e) {
 					text.setFont(new Font(AOption.FT, Font.BOLD, f.getSize()+5));
 					text.setForeground(hoverColor);
 				}
 				@Override public void mouseExited(MouseEvent e) {
-					if (s!=tab) text.setForeground(App.MenuFG);
+					if (tab!=selectedTab) text.setForeground(App.MenuFG);
 					else text.setForeground(selectedColor);
 					text.setFont(f);
 				}
 			});
-			if (s==tab) {text.setForeground(selectedColor);
-				if (j) {text.setFont(new Font(AOption.FT, Font.BOLD, f.getSize()+5));text.setForeground(hoverColor);}
+			if (tab==selectedTab) {
+				text.setForeground(selectedColor);
+				if (j) {
+					text.setFont(new Font(AOption.FT, Font.BOLD, f.getSize()+5));
+					text.setForeground(hoverColor);
+				}
 			}
 			add(text);
 		}
-		if (tab!=null) {JComponent jc = tab.getComponentWidth(getWidth());
+		if (selectedTab!=null) {
+			JComponent jc = selectedTab.getComponent(getWidth());
 			this.setPreferredSize(new Dimension(900,jc.getHeight()+BUTTONS_HEIGHT));
 			add(jc);
 		}

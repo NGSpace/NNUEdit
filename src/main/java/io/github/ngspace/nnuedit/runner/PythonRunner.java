@@ -1,10 +1,11 @@
 package io.github.ngspace.nnuedit.runner;
 
 import java.io.File;
+import java.io.IOException;
 
 import io.github.ngspace.nnuedit.App;
-import io.github.ngspace.nnuedit.menu.EditorTextArea;
-import io.github.ngspace.nnuedit.utils.UserMessager;
+import io.github.ngspace.nnuedit.utils.user_io.UserMessager;
+import io.github.ngspace.nnuedit.window.abstractions.Editor;
 import io.github.ngspace.nnuedit.window.abstractions.Window;
 
 public class PythonRunner implements IRunner {
@@ -28,24 +29,17 @@ public class PythonRunner implements IRunner {
 	@Override
 	public boolean canRun(App app) {
 		Window selwin = app.getSelectedWindow();
-		return (selwin!=null&&(selwin.getComponent() instanceof EditorTextArea
-				&&ValidFileExt(FileExtentions,((EditorTextArea)selwin.getComponent()).getFilePath())))
-				||containsFiles(getStarterFiles(),app)!=null;
+		return (selwin!=null&&(selwin.getComponent() instanceof Editor tx
+				&&validFileExt(FileExtentions,tx.getFilePath())))||containsFiles(getStarterFiles(),app)!=null;
 	}
 
 	@Override
-	public void Run(App app) {
+	public void run(App app) {
 		try {
-			Window w = app.getSelectedWindow();
-			
-			EditorTextArea tx = w != null ? ((EditorTextArea)w.getComponent()) : null;
-			String filetoopen = tx != null ? tx.getFilePath() : null;
-			if (!ValidFileExt(FileExtentions, filetoopen)) filetoopen =
-					app.Folder.getFolderPath() + File.separatorChar + containsFiles(getStarterFiles(),app);
 			String file = app.Folder.getFolderPath() +File.separatorChar+ 
 					containsFiles(getStarterFiles(),app);
 			file = slashify(file);
-			RunFile(new File(file), app);
+			runFile(new File(file), app);
 		} catch (Exception e) {
 			e.printStackTrace();
 			UserMessager.showErrorDialogTB("runner.shell.err.title","runner.shell.err",e.getLocalizedMessage());
@@ -53,7 +47,7 @@ public class PythonRunner implements IRunner {
 	}
 	
 	@Override
-	public void RunFile(File f, App app) throws Exception {
+	public void runFile(File f, App app) throws IOException {
 		/* Can't use Main.SYSTEM because universal might be used on a windows device */
 		if (System.getProperty("os.name").toLowerCase().contains("windows")) {
 			ProcessBuilder pb = new ProcessBuilder
@@ -69,6 +63,6 @@ public class PythonRunner implements IRunner {
 
 	@Override
 	public boolean canRunFile(File f, App app) {
-		return ValidFileExt(FileExtentions,(f.getPath()));
+		return validFileExt(FileExtentions,(f.getPath()));
 	}
 }

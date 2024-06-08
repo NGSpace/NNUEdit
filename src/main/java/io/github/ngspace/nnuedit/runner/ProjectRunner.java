@@ -1,6 +1,7 @@
 package io.github.ngspace.nnuedit.runner;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -12,8 +13,8 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import io.github.ngspace.nnuedit.App;
-import io.github.ngspace.nnuedit.utils.UserMessager;
 import io.github.ngspace.nnuedit.utils.registry.Registries;
+import io.github.ngspace.nnuedit.utils.user_io.UserMessager;
 
 public class ProjectRunner implements IRunner {
 	
@@ -25,14 +26,16 @@ public class ProjectRunner implements IRunner {
 	}
 
 	@Override
-	public void Run(App app) {
+	public void run(App app) {
 		String runnertype = "Unknown";
 		try {
 			IRunner resRunner = null;
 			File resFile = null;
 			
 			File f = new File(app.Folder.getFolderPath() + File.separatorChar + PROJECTFILE);
-			DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+			DocumentBuilder builder = factory.newDocumentBuilder();
 			Document doc = builder.parse(f);
 			doc.getDocumentElement().normalize();
 			Node type = doc.getElementsByTagName("project").item(0);
@@ -57,11 +60,10 @@ public class ProjectRunner implements IRunner {
 				}
 		    }
 		    if (resRunner==null) {
-				UserMessager.showErrorDialogTB("runner.project.error.title",
-						"runner.project.unknowntype",runnertype);
+				UserMessager.showErrorDialogTB("runner.project.error.title", "runner.project.unknowntype", runnertype);
 				return;
 		    }
-		    resRunner.RunFile(resFile, app);
+		    resRunner.runFile(resFile, app);
 		} catch (Exception e) {
 			e.printStackTrace();
 			UserMessager.showErrorDialogTB("runner.project.error.title",
@@ -69,21 +71,13 @@ public class ProjectRunner implements IRunner {
 		}
 	}
 
-	@Override
-	public void RunFile(File f, App app) throws Exception {
+	@Override public void runFile(File f, App app) throws IOException {
 		throw new ProjectCannotRunItselfException("Don't try to outsmart me: project can't run project");
 	}
 
-	@Override
-	public boolean canRunFile(File f, App app) {
-		return false;
-	}
+	@Override public boolean canRunFile(File f, App app) {return false;}
 }
-
-class ProjectCannotRunItselfException extends Exception {
-	public ProjectCannotRunItselfException(String string) {
-		super(string);
-	}
-
+class ProjectCannotRunItselfException extends IOException {
+	public ProjectCannotRunItselfException(String string) {super(string);}
 	private static final long serialVersionUID = -5345004481419592535L;
 }

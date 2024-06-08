@@ -11,11 +11,10 @@ public abstract class WindowMenu extends JPanel {
 	
 	protected Window window;
 	protected boolean paintSeperators = true;
-	public WindowMenu() {if (this instanceof Window) {window = (Window) this;}}
-	public WindowMenu(Window window) {this.window = window;}
+	protected WindowMenu() {if (this instanceof Window thiz) {window = thiz;}}
+	protected WindowMenu(Window window) {this.window = window;}
 	@Override public void paint(Graphics g) {
 		super.paint(g);
-		if (paintSeperators)
-			window.getScrollPane().paintSeperators((Graphics2D)g);
+		if (paintSeperators) window.getScrollPane().paintSeperators((Graphics2D)g);
 	}
 }

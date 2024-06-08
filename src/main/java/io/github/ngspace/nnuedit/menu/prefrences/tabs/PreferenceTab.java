@@ -12,8 +12,7 @@ public class PreferenceTab extends APreferenceTab {
 	public Header h;
 	public PreferenceTab(Header h) {this.h = h;}
 
-	@Override
-	public JComponent getComponentWidth(int w) {
+	@Override public JComponent getComponent(int w) {
 		JPanel options_panel = new JPanel(null, true);
 		options_panel.setOpaque(false);
 		int Y = 0;

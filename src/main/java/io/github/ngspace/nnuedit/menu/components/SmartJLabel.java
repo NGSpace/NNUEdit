@@ -92,10 +92,13 @@ public class SmartJLabel extends JLabel {
 		}
 	}
 	
-	@Override protected void paintComponent(Graphics g) {}
+	@Override protected void paintComponent(Graphics g) {/**/}
 	
 	protected void drawString(Graphics g, String text, int x, int y) {
-        for (String line : text.split("\n")) g.drawString(line, x, y += g.getFontMetrics().getHeight());
+        for (String line : text.split("\n")) {
+        	y += g.getFontMetrics().getHeight();
+        	g.drawString(line, x, y);
+        }
     }
 	protected int countLines(String str){String[] lines = str.split("\r\n|\r|\n");return lines.length;}
 	public void setAntiAliasing(boolean antialias) {this.forceantialias = antialias;}

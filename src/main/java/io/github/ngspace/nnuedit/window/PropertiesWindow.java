@@ -9,7 +9,7 @@ import io.github.ngspace.nnuedit.App;
 import io.github.ngspace.nnuedit.menu.PropertiesMenu;
 import io.github.ngspace.nnuedit.menu.components.NGSScrollPane;
 import io.github.ngspace.nnuedit.menu.components.Tab;
-import io.github.ngspace.nnuedit.utils.Utils;
+import io.github.ngspace.nnuedit.utils.FileIO;
 import io.github.ngspace.nnuedit.window.abstractions.Editor;
 import io.github.ngspace.nnuedit.window.abstractions.EditorWindow;
 
@@ -33,18 +33,18 @@ public class PropertiesWindow implements EditorWindow {
         sp.getVerticalScrollBar().setLocation(sp.getWidth() - 25, 0);
         
         sp.setOpaque(true);
-        app.addRedrawListener((a)->menu.resize());
+        app.addRedrawListener(a->menu.resize());
 	}
 	@Override public boolean isSaved() {return menu.isSaved();}
-	@Override public boolean Save(boolean ask) {return menu.Save(ask);}
+	@Override public boolean save(boolean ask) {return menu.save(ask);}
 	@Override public String getTitle() {
-		return ("".equals(menu.getFilePath())?"Unknown":Utils.getFileName(menu.getFilePath()));
+		return ("".equals(menu.getFilePath())?"Unknown":FileIO.getFileName(menu.getFilePath()));
 	}
 	@Override public NGSScrollPane getScrollPane() {return sp;}
 	@Override public JComponent getComponent() {return menu;}
 	@Override public Tab getTab() {return tab;}
 	@Override public App getApp() {return app;}
-	@Override public boolean closeEvent(Object... Reason) {return Save(!isSaved());}
+	@Override public boolean closeEvent(Object... Reason) {return save(!isSaved());}
 	@Override public Editor getEditor() {return menu;}
 
 }

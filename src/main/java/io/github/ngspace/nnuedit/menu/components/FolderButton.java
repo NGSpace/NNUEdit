@@ -12,6 +12,8 @@ import io.github.ngspace.nnuedit.App;
 
 public class FolderButton extends JButton {
 	
+	private static final long serialVersionUID = 1696619060167421515L;
+	
 	private App app;
 
 	public FolderButton(App app) {
@@ -26,17 +28,17 @@ public class FolderButton extends JButton {
     	setBounds(100, 100,60,70);
 	}
 	
-	private static final long serialVersionUID = 1696619060167421515L;
+	
 
 	@Override protected void paintComponent(Graphics gra) {paintButton(gra,0,0);}
-	
 	private void paintButton(Graphics gra, int x, int y) {
+		if (!isEnabled()) return;
 		Graphics2D g = (Graphics2D)gra;
 		int w = getWidth();
 		int he = getHeight();
 
 		int h = he - 5;
-		g.setColor(App.MenuBG);
+		g.setColor(app.MenuBG);
 		g.fillOval(x-(w/2), y, w, h);
 		App.adjustAntialias(g,false);
 	    g.setComposite(AlphaComposite.getInstance(

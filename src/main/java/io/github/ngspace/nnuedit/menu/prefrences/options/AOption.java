@@ -14,11 +14,10 @@ public abstract class AOption {
 	public String name;
 	public String key;
 	public JPanel panel = new JPanel(null,true);
-	public AOption(String name, String key) {
+	protected AOption(String name, String key) {
 		panel.setOpaque(false);
 		this.name = name;
 		this.key = key;
 	}
 	public abstract JComponent getComponentWidth(int width);
-	public abstract AOption create(String name, String key);
 }

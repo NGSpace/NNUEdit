@@ -10,23 +10,23 @@ import io.github.ngspace.nnuedit.App;
 import io.github.ngspace.nnuedit.menu.components.IconButton;
 import io.github.ngspace.nnuedit.menu.components.SmartJLabel;
 import io.github.ngspace.nnuedit.menu.prefrences.options.AOption;
-import io.github.ngspace.nnuedit.utils.Utils;
+import io.github.ngspace.nnuedit.utils.ImageUtils;
 import io.github.ngspace.nnuedit.window.abstractions.Window;
 
 public class BasicExtensionPanel extends JPanel {
-	
 	private static final long serialVersionUID 	= 3168985161109597920L;
-	double h = 100;
+	
+	
 	
 	public BasicExtensionPanel(ExtensionValues ext, int width) {
-		this.setBounds(0, 0, width, (int) h);
+		this.setBounds(0, 0, width, 100);
 		setBackground(Window.color);
 		setForeground(App.MenuFG);
 		setLayout(null);
 		Map<String,Object> extSettings = ext.configuration;
 		String extname = String.valueOf(extSettings.get("name"));
 		String iconloc = String.valueOf(extSettings.get("icon"));
-		if (iconloc=="null") iconloc = null;
+		if ("null".equals(iconloc)) iconloc = null;
 		
 		Object description = extSettings.get("description");
 		
@@ -38,12 +38,12 @@ public class BasicExtensionPanel extends JPanel {
 		
 		if (iconloc!=null) {
 			try {
-				Icon i = Utils.ReadImageIcon(ext.extensionLoader.getResourceAsStream(iconloc));
-				int ratiow = (int) (i.getIconWidth()/(i.getIconHeight()/h));
+				Icon i = ImageUtils.readIconFromStream(ext.extensionLoader.getResourceAsStream(iconloc));
+				int ratiow = i.getIconWidth()/(i.getIconHeight()/100);
 				IconButton ponent = new IconButton(i);
 				ponent.setBackground(Window.color);
 				ponent.setForeground(App.MenuFG);
-				ponent.setBounds(0, 0, ratiow, (int) h);
+				ponent.setBounds(0, 0, ratiow, 100);
 				add(ponent);
 			} catch (Exception e) {e.printStackTrace();}
 		}

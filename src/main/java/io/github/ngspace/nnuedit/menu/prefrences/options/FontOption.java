@@ -18,9 +18,7 @@ import io.github.ngspace.nnuedit.menu.components.SmartJLabel;
 
 public class FontOption extends AOption {
 
-	public FontOption(String name, String key) {
-		super(name, key);
-	}
+	public FontOption(String name, String key) {super(name, key);}
 
 	@Override
 	public JComponent getComponentWidth(int width) {
@@ -80,13 +78,4 @@ public class FontOption extends AOption {
 		panel.add(btnNewButton);
 		return panel;
 	}
-
-	@Override
-	public AOption create(String name, String key) {
-		return new FontOption(name, key);
-	}
-	public static AOption build(String name, String key) {
-		return new FontOption(name, key);
-	}
-
 }

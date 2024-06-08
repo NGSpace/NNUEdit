@@ -4,7 +4,6 @@ import static io.github.ngspace.nnuedit.asset_manager.StringTable.get;
 import static java.lang.System.out;
 
 import java.awt.Component;
-import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -15,37 +14,41 @@ import javax.swing.JPopupMenu;
 import javax.swing.tree.TreePath;
 
 import io.github.ngspace.nnuedit.App;
-import io.github.ngspace.nnuedit.utils.UserMessager;
-import io.github.ngspace.nnuedit.utils.Utils;
+import io.github.ngspace.nnuedit.utils.FileIO;
+import io.github.ngspace.nnuedit.utils.user_io.UserMessager;
 import io.github.ngspace.nnuedit.window.abstractions.Editor;
 import io.github.ngspace.nnuedit.window.abstractions.Window;
+
 public class FolderPopup extends JPopupMenu {
 	
 	private static final long serialVersionUID = 5845511693212284567L;
 	FolderPanel fp;
 	App app;
 	
-	public FolderPopup(FolderPanel fp, App app) {
+	public FolderPopup(FolderPanel fp) {
 		this.fp = fp;
-		this.app = app;
+		this.app = fp.app;
 	}
 	
-	public void show(Component invoker, int x, int y, int[] text, TreePath[] node) {
+	@Override
+	public void show(Component invoker, int x, int y) {
+		int[] selectedrows = fp.tree.getSelectionRows();
+		TreePath[] selectedpaths = fp.tree.getSelectionPaths();
 		/**
 		 * Do not trust this variable please! it is most likely null!
 		 */
-		File f = text.length==1?new File(fp.nodeFromRow(text[0]).getUserObject().toString()):null;
+		File f = selectedrows.length==1?new File(fp.tree.nodeFromRow(selectedrows[0]).getUserObject().toString()):null;
 		this.removeAll();
 		
 		JMenuItem DELETE = new JMenuItem(get("folder.ctx.delete"));
 		DELETE.addActionListener(e -> {
 			try {
 				int res = UserMessager.confirmTB("confirm.delete", "confirm.delete");
-				if (res==UserMessager.YES_OPTION) {
-					for (int p : text) {
-						out.println("Deleting " + fp.nodeFromRow(p).getUserObject().toString());
+				if (res==UserMessager.YES) {
+					for (int p : selectedrows) {
+						out.println("Deleting " + fp.tree.nodeFromRow(p).getUserObject().toString());
 						
-						Utils.delete(Paths.get(fp.nodeFromRow(p).getUserObject().toString()));
+						FileIO.recursiveDelete(Paths.get(fp.tree.nodeFromRow(p).getUserObject().toString()));
 					}
 					fp.tree.setSelectionRow(-1);
 				}
@@ -74,13 +77,9 @@ public class FolderPopup extends JPopupMenu {
 		REFRESH.addActionListener(e -> fp.refresh(true));
 		
 		JMenuItem OPENINEXPLORER = new JMenuItem(get("folder.ctx.openinexp"));
-		OPENINEXPLORER.addActionListener(e -> {
-			try {
-				Desktop.getDesktop().browse(f.getParentFile().toURI());
-			} catch (IOException e1) {e1.printStackTrace();}
-		});
+		OPENINEXPLORER.addActionListener(e -> FileIO.openInExplorer(f.getParentFile()));
 		
-		if (text.length==1&&f.isDirectory()) {
+		if (f!=null&&f.isDirectory()) {
 			JMenuItem NewFile = new JMenuItem(get("folder.ctx.newfile"));
 			NewFile.addActionListener(e -> {
 				try {
@@ -94,7 +93,7 @@ public class FolderPopup extends JPopupMenu {
 							UserMessager.showErrorDialogTB("folder.err.foldercreate.title",
 									f.exists() ? "err.fileexists" : "folder.err.foldercreate");
 						}
-						fp.tree.expandPath(node[0]);
+						fp.tree.expandPath(selectedpaths[0]);
 					} else {
 						out.println("Canceled File Creation");
 					}
@@ -114,7 +113,7 @@ public class FolderPopup extends JPopupMenu {
 								fi.exists() ? "err.fileexists" :
 									"folder.err.foldercreate");
 					}
-					fp.tree.expandPath(node[0]);
+					fp.tree.expandPath(selectedpaths[0]);
 				} else {
 					out.println("Canceled Folder Creation");
 				}
@@ -124,7 +123,7 @@ public class FolderPopup extends JPopupMenu {
 			add(NewFolder);
 			this.addSeparator();
 		}
-		if(text.length==1) {
+		if(f!=null) {
 			add(RENAME);
 			add(DELETE);
 	
@@ -143,16 +142,14 @@ public class FolderPopup extends JPopupMenu {
 		}
 		super.show(invoker,x,y);
     }
-	public boolean rename(File f, String newName) throws Exception {
+	public boolean rename(File f, String newName) throws IOException {
 		String name = f.getAbsolutePath();
 		String newFile = f.getParent() + File.separatorChar + newName;
 		boolean res = f.renameTo(new File(f.getParent() + File.separatorChar + newName));
-		if (!res)
-			throw new Exception("Unable to rename Object");
+		if (!res) throw new IOException("Unable to rename Object");
 		else {
 			for (Window i : app.Windows) {
-				if (i.getComponent() instanceof Editor
-						&&Objects.equals(((Editor)i.getComponent()).getFilePath(), name)) {
+				if (i.getComponent() instanceof Editor editor && Objects.equals(editor.getFilePath(), name)) {
 					((Editor)i.getComponent()).setFilePath(newFile);
 					i.getTab().repaint();
 				}

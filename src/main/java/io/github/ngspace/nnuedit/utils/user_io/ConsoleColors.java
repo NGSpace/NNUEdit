@@ -1,6 +1,6 @@
-package io.github.ngspace.nnuedit.utils;
+package io.github.ngspace.nnuedit.utils.user_io;
 
-public interface ConsoleColors {
+public class ConsoleColors {private ConsoleColors() {}
     // Reset
     public static final String RESET = "\033[0m";  // Text Reset
  

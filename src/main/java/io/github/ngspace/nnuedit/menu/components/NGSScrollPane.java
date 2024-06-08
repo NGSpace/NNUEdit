@@ -19,7 +19,6 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.swing.text.JTextComponent;
 
-import org.fife.ui.rsyntaxtextarea.folding.DefaultFoldManager;
 import org.fife.ui.rsyntaxtextarea.folding.Fold;
 import org.fife.ui.rsyntaxtextarea.folding.FoldManager;
 
@@ -32,9 +31,13 @@ public class NGSScrollPane extends JScrollPane implements MouseListener, MouseMo
 	private static final long serialVersionUID = 3952255173637165838L;
 	private App app;
 	public int Number = 0;
-
+	
+	
+	
 	public NGSScrollPane(App app, Container contentPane) {this(app);this.getViewport().setView(contentPane);}
 	public NGSScrollPane(App app) {super();this.app=app;init();}
+	
+	
 	
 	public void init() {
         setBorder(null);
@@ -49,8 +52,7 @@ public class NGSScrollPane extends JScrollPane implements MouseListener, MouseMo
 		setViewport(new JViewport() {
 			private static final long serialVersionUID = -8588144347690129055L;
 			@Override public void setView(Component view) {
-				if (view instanceof JTextComponent) {
-					JTextComponent obj = (JTextComponent) view;
+				if (view instanceof JTextComponent obj) {
 					countLines(obj);
 					view.addMouseMotionListener(sp);
 					view.addMouseListener(sp);
@@ -65,9 +67,8 @@ public class NGSScrollPane extends JScrollPane implements MouseListener, MouseMo
 	 * My proudest peice of code
 	 */
 	public void paintLines(Graphics g) {
-		if (getViewport().getView() instanceof EditorTextArea && Main.settings.getBoolean("editor.numberlines")) {
+		if (getViewport().getView() instanceof EditorTextArea i && Main.settings.getBoolean("editor.numberlines")) {
 			App.adjustAntialias(g,false);
-			EditorTextArea i = (EditorTextArea) getViewport().getView();
 			FoldManager fm = i.getFoldManager();
 			Point position = getViewport().getViewPosition();
 			Rectangle r = getViewport().getViewRect();
@@ -94,28 +95,35 @@ public class NGSScrollPane extends JScrollPane implements MouseListener, MouseMo
 					
 					if (fold!=null) g.setColor(Color.red);
 					else g.setColor(getForeground());
-				} catch (Exception e) {}
+				} catch (Exception e) {return;}
 				if (y>r.y+(getHeight()+20)) break;
 				if (y>r.y&&y-(getHeight()+20)<r.y) g.drawString(s, (int) (getWidth()-x), (int) y);
 			}
 		}
 	}
+	
+	public void paintSeperators(Graphics2D gra) {
+		if (!app.isFolderOpen()) return;
+		gra.setColor(app.pane.getBackground());
+		gra.fillRect(0, 0, App.getBuffer(), getHeight());
+	}
+	
+	@Override public void repaint() {revalidate();super.repaint();}
+	
+	
+	
     public void countLines(JTextComponent textArea) {Document d = textArea.getDocument();
         try {Number = d.getText(0, d.getLength()).split("\r\n|\r|\n",-1).length;
 		} catch (BadLocationException e) {e.printStackTrace();}
     }
-	public void paintSeperators(Graphics2D gra) {
-		if (!app.isFolderOpen()) return;
-		gra.setColor(app.contentpane.getBackground());
-		gra.fillRect(0, 0, App.getBuffer(), getHeight());
-	}
-	@Override public void repaint() {revalidate();super.repaint();}
+    
+    
+    
 	@Override public void mouseClicked(MouseEvent e)  {
 		if (!(e.getSource() instanceof JTextComponent)) return;
 		JTextComponent component = (JTextComponent) e.getSource();
-		if (component instanceof EditorTextArea && Main.settings.getBoolean("editor.numberlines")) {
-			EditorTextArea i = (EditorTextArea) component;
-			DefaultFoldManager fm = (DefaultFoldManager) i.getFoldManager();
+		if (component instanceof EditorTextArea i && Main.settings.getBoolean("editor.numberlines")) {
+			FoldManager fm = i.getFoldManager();
 			Rectangle r = getViewport().getViewRect();
 			FontMetrics gfm = getFontMetrics(i.getFont());
 			
@@ -133,9 +141,8 @@ public class NGSScrollPane extends JScrollPane implements MouseListener, MouseMo
 		if (!(e.getSource() instanceof JTextComponent)) return;
 		JTextComponent component = (JTextComponent) e.getSource();
 		boolean hand = false;
-		if (component instanceof EditorTextArea && Main.settings.getBoolean("editor.numberlines")) {
-			EditorTextArea i = (EditorTextArea) component;
-			DefaultFoldManager fm = (DefaultFoldManager) i.getFoldManager();
+		if (component instanceof EditorTextArea i && Main.settings.getBoolean("editor.numberlines")) {
+			FoldManager fm = i.getFoldManager();
 			Rectangle r = getViewport().getViewRect();
 			FontMetrics gfm = getFontMetrics(i.getFont());
 			
@@ -151,10 +158,10 @@ public class NGSScrollPane extends JScrollPane implements MouseListener, MouseMo
 		if (hand) component.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		else component.setCursor(Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR));
 	}
-	@Override public void mousePressed(MouseEvent e)  {}
-	@Override public void mouseReleased(MouseEvent e) {}
-	@Override public void mouseEntered(MouseEvent e)  {}
-	@Override public void mouseExited(MouseEvent e)   {}
-	@Override public void mouseDragged(MouseEvent e)  {}
+	@Override public void mousePressed(MouseEvent e)  {/**/}
+	@Override public void mouseReleased(MouseEvent e) {/**/}
+	@Override public void mouseEntered(MouseEvent e)  {/**/}
+	@Override public void mouseExited(MouseEvent e)   {/**/}
+	@Override public void mouseDragged(MouseEvent e)  {/**/}
 
 }

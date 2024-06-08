@@ -12,14 +12,16 @@ import java.awt.RenderingHints.Key;
 import java.io.File;
 
 import javax.swing.BorderFactory;
+import javax.swing.Icon;
 import javax.swing.JTree;
 import javax.swing.border.Border;
 import javax.swing.tree.DefaultTreeCellRenderer;
 
 import io.github.ngspace.nnuedit.App;
 import io.github.ngspace.nnuedit.asset_manager.AssetManager;
-import io.github.ngspace.nnuedit.utils.SmartGraphics2D;
-import io.github.ngspace.nnuedit.utils.Utils;
+import io.github.ngspace.nnuedit.utils.FileIO;
+import io.github.ngspace.nnuedit.utils.ImageUtils;
+import io.github.ngspace.nnuedit.utils.ui.SmartGraphics2D;
 
 public class FolderTreeRenderer extends DefaultTreeCellRenderer {
 	
@@ -27,28 +29,28 @@ public class FolderTreeRenderer extends DefaultTreeCellRenderer {
 	
     Border border = BorderFactory.createLineBorder(Color.black);
     String[] exceptions = {".nnuproject"};
-
-	public FolderTreeRenderer(FolderPanel folder) {}
 	
 	@Override
 	public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, 
 			boolean expanded, boolean leaf, int row, boolean hasFocus) {
 	    super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
 	    String file = value.toString();
-	    String n = Utils.getFileName(file);
+	    String n = FileIO.getFileName(file);
         this.setText(n);
         this.setToolTipText(n);
         this.setBackgroundSelectionColor(new Color(50,50,50));
         this.setForeground(new Color(164,164,164));
         
+        Icon ico = AssetManager.getIconOfFile(new File(file),ROW_HEIGHT,ROW_HEIGHT);
         
-        if (!Utils.getFileName(file).startsWith(".")||contains(exceptions,Utils.getFileName(file)))
-        	this.setIcon(AssetManager.getIconOfFile(new File(file)));
+        if (!FileIO.getFileName(file).startsWith(".")||contains(exceptions,FileIO.getFileName(file)))
+        	this.setIcon(ico);
         else {
-        	this.setIcon(Utils.getTransparency(.5f,AssetManager.getIconOfFile(new File(file),ROW_HEIGHT,ROW_HEIGHT)));
+        	this.setIcon(ImageUtils.asTransparentIcon(.5f,ico));
         	this.setForeground(getForeground().darker().darker().darker());
 	        this.setBackgroundSelectionColor(getBackgroundSelectionColor().darker().darker());
-        }return this;
+        }
+        return this;
 	}
 	
 	@Override public void paintComponent(Graphics g) {
